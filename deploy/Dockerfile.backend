@@ -1,0 +1,13 @@
+FROM python:3.13-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY backend/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && groupadd --gid 10001 stc && useradd --uid 10001 --gid stc --create-home stc
+COPY --chown=stc:stc backend/ ./
+RUN mkdir -p media staticfiles .private-emails .runtime && chown -R stc:stc media staticfiles .private-emails .runtime \
+    && chmod 700 .private-emails .runtime
+USER stc
+RUN DJANGO_SECRET_KEY=static-build-placeholder-not-a-runtime-secret DJANGO_DEBUG=1 STC_DEMO_MODE=1 STC_PAYMENT_MODE=simulation STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= python manage.py collectstatic --noinput
+EXPOSE 8000
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "45", "--error-logfile", "-"]

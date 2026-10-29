@@ -1,0 +1,29 @@
+# Production override. Requires real DNS, ports 80/443, .env production values.
+# This delivery still permits TEST payments only.
+services:
+  backend:
+    environment:
+      DJANGO_DEBUG: '0'
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?Set allowed domain}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:?Set HTTPS origin}
+      FRONTEND_URL: ${FRONTEND_URL:?Set HTTPS frontend URL}
+      STC_DEMO_MODE: ${STC_DEMO_MODE:-0}
+      STC_PAYMENT_MODE: ${STC_PAYMENT_MODE:-stripe}
+      SECURE_SSL_REDIRECT: '1'
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; r=urllib.request.Request('http://127.0.0.1:8000/api/health/',headers={'Host':'${STC_DOMAIN}', 'X-Forwarded-Proto':'https'}); urllib.request.urlopen(r)"]
+  frontend:
+    build:
+      target: production
+    ports: !override
+      - 80:80
+      - 443:443
+      - 443:443/udp
+    environment:
+      STC_DOMAIN: ${STC_DOMAIN:?Set real domain}
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+volumes:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,58 @@
+name: stc
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: stc
+      POSTGRES_USER: stc
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run python3 scripts/setup.py to create .env first}
+    volumes:
+      - stc-db:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U stc -d stc]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://stc:${POSTGRES_PASSWORD}@db:5432/stc
+      DJANGO_DEBUG: '1'
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      DJANGO_CSRF_TRUSTED_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+      FRONTEND_URL: http://localhost:8080
+      STC_DEMO_MODE: '1'
+      STC_PAYMENT_MODE: simulation
+      STC_RUNTIME_DIR: /app/.runtime
+      STC_TRUST_PROXY: '1'
+    volumes:
+      - stc-media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.frontend
+      target: local
+    ports:
+      - 127.0.0.1:8080:80
+    volumes:
+      - stc-media:/media:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  stc-db:
+  stc-media:

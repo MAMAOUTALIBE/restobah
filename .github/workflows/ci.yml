@@ -1,0 +1,51 @@
+name: STC checks
+on: [push, pull_request]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: stc
+          POSTGRES_USER: stc
+          POSTGRES_PASSWORD: stc-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U stc -d stc"
+          --health-interval 5s --health-timeout 5s --health-retries 15
+    env:
+      DATABASE_URL: postgres://stc:stc-ci-only@localhost:5432/stc
+      DJANGO_DEBUG: '1'
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DJANGO_CSRF_TRUSTED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      STC_DEMO_MODE: '1'
+      STC_PAYMENT_MODE: simulation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m venv backend/.venv
+      - run: backend/.venv/bin/pip install -r backend/requirements.txt
+      - run: npm ci
+      - run: npm run check
+      - run: python -m pip install pip-audit
+      - run: python -m pip_audit -r backend/requirements.txt --no-deps --disable-pip
+      - run: backend/.venv/bin/python backend/manage.py makemigrations --check --dry-run
+      - run: npm run test:backend
+      - run: npx playwright install --with-deps chromium
+      # Isolated servers (ports 8001/5174) on the CI PostgreSQL database.
+      - run: python3 scripts/e2e.py
+        env:
+          STC_E2E_DATABASE_URL: postgres://stc:stc-ci-only@localhost:5432/stc
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-test-results
+          path: test-results/
+          retention-days: 7

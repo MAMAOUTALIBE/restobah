@@ -1,0 +1,18 @@
+# Deployment behind an existing host reverse proxy (nginx + certbot) that terminates TLS,
+# for example a VPS that already serves other sites on ports 80/443.
+# The stack only listens on 127.0.0.1:${STC_HTTP_PORT}; see deploy/nginx-host.conf.example.
+services:
+  backend:
+    environment:
+      DJANGO_DEBUG: '0'
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?Set the public host names}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:?Set the public HTTPS origins}
+      FRONTEND_URL: ${FRONTEND_URL:?Set the public HTTPS URL}
+      STC_DEMO_MODE: ${STC_DEMO_MODE:-1}
+      STC_PAYMENT_MODE: ${STC_PAYMENT_MODE:-simulation}
+      SECURE_SSL_REDIRECT: '1'
+    healthcheck:
+      test: [CMD, python, -c, "import os,urllib.request; urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8000/api/health/',headers={'Host':os.environ['DJANGO_ALLOWED_HOSTS'].split(',')[0],'X-Forwarded-Proto':'https'}))"]
+  frontend:
+    ports: !override
+      - 127.0.0.1:${STC_HTTP_PORT:-18200}:80

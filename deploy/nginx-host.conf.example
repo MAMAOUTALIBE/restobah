@@ -1,0 +1,23 @@
+# Host nginx (VPS) -> STC frontend container on 127.0.0.1:18200 (compose.vps.yaml).
+# Copy to /etc/nginx/sites-available/, link it in sites-enabled, then `nginx -t && systemctl reload nginx`.
+# Once the DNS record points to the server, add HTTPS with: certbot --nginx -d stc.example.com
+# Access log without query strings: guest tracking tokens must not be written to logs.
+log_format stc_host_safe '$remote_addr - [$time_local] "$request_method $uri" $status $body_bytes_sent';
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name stc.example.com;
+    access_log /var/log/nginx/stc.access.log stc_host_safe;
+    client_max_body_size 8m;
+
+    location / {
+        proxy_pass http://127.0.0.1:18200;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
+}
