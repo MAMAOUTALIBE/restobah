@@ -34,7 +34,7 @@ test('remise, catégories et prix suivent le catalogue du serveur',async({page})
  await page.route('**/api/categories/',async route=>{const response=await route.fetch();const list=await response.json();await route.fulfill({response,json:[...list,{name:'Salades',position:3}]});});
  await page.goto('/');
  await expect(page.locator('.offer h2')).toHaveText('Jusqu’à −25 %');await expect(page.locator('.offer-discount')).toContainText('25');
- const salads=page.getByRole('button',{name:'Salades',exact:true});await expect(salads).toBeVisible();await salads.click();await expect(page.locator('.product-card')).toHaveCount(1);await expect(page.getByRole('heading',{name:'La Salade Fraîcheur'})).toBeVisible();
+ const salads=page.getByRole('button',{name:'Salades',exact:true});await expect(salads).toBeVisible();await salads.click();await expect(page.locator('.product-card')).toHaveCount(1);await expect(page.locator('.product-grid').getByRole('heading',{name:'La Salade Fraîcheur'})).toBeVisible();
  expect(await noOverflow(page)).toBe(true);
 });
 

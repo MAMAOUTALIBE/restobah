@@ -78,8 +78,10 @@ class Restaurant(models.Model):
             if period.opens < period.closes:
                 if period.weekday == at.weekday() and period.opens <= at.time().replace(tzinfo=None) < period.closes:
                     return True
-            elif not self.closures.filter(date=previous_date).exists():
-                if (period.weekday == at.weekday() and at.time().replace(tzinfo=None) >= period.opens) or (period.weekday == previous_date.weekday() and at.time().replace(tzinfo=None) < period.closes):
+            else:
+                if period.weekday == at.weekday() and at.time().replace(tzinfo=None) >= period.opens:
+                    return True
+                if period.weekday == previous_date.weekday() and at.time().replace(tzinfo=None) < period.closes and not self.closures.filter(date=previous_date).exists():
                     return True
         return False
     def __str__(self):

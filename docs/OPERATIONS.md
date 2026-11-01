@@ -114,6 +114,20 @@ docker compose exec -T db psql -U stc -d postgres -c "DROP DATABASE restore_chec
 cp backups/SAUVEGARDE.sqlite3 /tmp/restore.sqlite3 && sqlite3 /tmp/restore.sqlite3 "PRAGMA integrity_check"
 ```
 
+## Réparer les compteurs d’identifiants PostgreSQL
+
+Une ancienne initialisation par `seed_demo` pouvait laisser le compteur automatique des plats ou du restaurant derrière les identifiants déjà présents. Le symptôme est une erreur de clé primaire à l’ajout d’un plat. Après installation de la version corrigée, réparer une base existante avec :
+
+```sh
+docker compose -f compose.yaml -f compose.production.yaml exec -T backend python manage.py repair_crm_sequences
+```
+
+Adapter les fichiers Compose à l’instance utilisée. En environnement Python direct : `python manage.py repair_crm_sequences`. L’option `--database` permet de choisir un alias Django ; par défaut, la commande utilise `default`.
+
+Cette commande avance uniquement les compteurs automatiques `Product` et `Restaurant`, en tenant compte des valeurs déjà réservées. Elle ne réduit jamais un compteur, ne charge aucun exemple, ne recrée aucun plat supprimé et ne modifie ni prix ni réglages. Elle peut être relancée. Sur SQLite, ces compteurs sont déjà gérés automatiquement et la commande ne change rien.
+
+Le verrou de tables laisse les lectures ouvertes et fait attendre brièvement les écritures concurrentes pendant le contrôle. Les valeurs de séquence déjà consommées ne sont pas réutilisées, conformément au fonctionnement de [PostgreSQL 17](https://www.postgresql.org/docs/17/functions-sequence.html). Il n’y a aucune migration de schéma à exécuter pour cette réparation. L’initialisation `seed_demo` corrigée applique le même contrôle ; sur une base personnalisée, utiliser la réparation seule pour conserver les suppressions décidées par le restaurant.
+
 ## Préparer la production
 
 La configuration est prête à renseigner, mais aucune publication n’est effectuée automatiquement.

@@ -26,7 +26,7 @@ export function ProductDetails({product:p,onClose,onAdd}:{product:Product;onClos
     <FoodImage className="detail-image" image={p.image} alt={p.name}/>
     <div className="detail-body"><span className="small-label">PRÉPARÉ À LA COMMANDE</span><h2>{p.name}</h2><p className="muted">{p.description}</p>
       {!available&&<p className="error" role="status">Ce plat est temporairement indisponible.</p>}
-      <form onSubmit={e=>{e.preventDefault();const errors=groups.filter(g=>{const count=g.choices.filter(c=>choices.includes(c.id)).length;return count<g.min||count>g.max;}).map(g=>g.id);setInvalid(errors);if(errors.length||!available)return;onAdd({key:cartKey(p.id,choices),product:p,quantity,choices:[...choices].sort(),choiceNames:selected.map(c=>c.name),unitPrice:unit});onClose();}}>
+      <form onSubmit={e=>{e.preventDefault();const currentChoices=selected.map(choice=>choice.id).sort();setChoices(currentChoices);const errors=groups.filter(g=>{const count=g.choices.filter(c=>currentChoices.includes(c.id)).length;return count<g.min||count>g.max;}).map(g=>g.id);setInvalid(errors);if(errors.length||!available)return;onAdd({key:cartKey(p.id,currentChoices),product:p,quantity,choices:currentChoices,choiceNames:selected.map(c=>c.name),unitPrice:unit});onClose();}}>
         {groups.map(group=>{
           const checkedCount=group.choices.filter(c=>choices.includes(c.id)).length;
           return <fieldset key={group.id} aria-describedby={invalid.includes(group.id)?`error-${group.id}`:undefined}>

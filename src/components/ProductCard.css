@@ -1,0 +1,366 @@
+/* One photo, one clear content column: the same horizontal shape at every size. */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 20px;
+  width: 100%;
+  min-width: 0;
+}
+
+.product-grid .skeleton {
+  height: 210px;
+  border-radius: 24px;
+}
+
+.product-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42% minmax(0, 1fr);
+  width: 100%;
+  min-width: 0;
+  min-height: 210px;
+  overflow: hidden;
+  background: #fffaf4;
+  border: 1px solid #ecddca;
+  border-radius: 24px;
+  box-shadow: 0 5px 16px #5c36120a;
+  transition: box-shadow .2s, transform .2s;
+}
+
+.card-media {
+  position: relative;
+  align-self: stretch;
+  min-width: 0;
+  margin: 6px 0 6px 6px;
+  padding: 0;
+  overflow: hidden;
+  background: #f7e8d6;
+  border-radius: 19px;
+}
+
+.card-media .food-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform .35s;
+}
+
+.card-media:focus-visible {
+  outline-offset: -4px;
+}
+
+/* Keeping the heart over the photo gives the dish name its full column. */
+.card-favorite {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: #664e6b;
+  background: #fffaf4f2;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px #28122a0d;
+  transition: color .2s, background .2s;
+}
+
+.card-favorite.is-favorite {
+  color: var(--violet);
+  background: #f1e4f7;
+  border-color: #e6c9f0;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 22px 20px 18px;
+}
+
+.card-badge {
+  max-width: 100%;
+  margin-bottom: 10px;
+  padding: 5px 9px;
+  color: var(--violet);
+  background: #efe1f5;
+  border-radius: 6px;
+  font-size: 9px;
+  line-height: 1.3;
+  font-weight: 800;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.card-badge--vegetarian,
+.card-badge-spacer {
+  display: none;
+}
+
+.card-title {
+  align-self: stretch;
+  color: #26112f;
+  font-size: 23px;
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -.65px;
+  overflow-wrap: anywhere;
+}
+
+.card-title button {
+  display: block;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.card-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 8px;
+  color: #736579;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.card-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card-options li {
+  padding: 4px 8px;
+  color: #673584;
+  background: #f0e4f5;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  align-self: stretch;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 17px;
+}
+
+.card-price {
+  color: #24112c;
+  font-family: Outfit, sans-serif;
+  font-size: 25px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -.8px;
+  white-space: nowrap;
+}
+
+.card-add {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  background: var(--orange);
+  border: 1px solid #ffad48;
+  border-radius: 50%;
+  color: #fff;
+  box-shadow: 0 4px 10px #ff981f24;
+  transition: background .2s, transform .15s;
+}
+
+.card-choose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 17px;
+  color: #fff;
+  background: var(--violet);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  transition: background .2s, transform .15s;
+}
+
+/* Formula: pale lavender frame, complete meal image, selectable options. */
+.formula-card {
+  border-color: #d6b6e5;
+  box-shadow: 0 5px 16px #48146508;
+}
+
+.formula-card .card-media {
+  background: #f8eddf;
+}
+
+.formula-card .card-media .food-image {
+  object-fit: contain;
+}
+
+/* The catalogue's best-sellers get the immersive violet treatment. */
+.specialty-card {
+  background: linear-gradient(125deg, #622380, #3b104f);
+  border-color: #63277d;
+  box-shadow: 0 6px 18px #48146519;
+}
+
+.specialty-card .card-media {
+  margin: 0;
+  border-radius: 0 19px 19px 0;
+}
+
+.specialty-card .card-title {
+  color: #fffaf4;
+}
+
+.specialty-card .card-text {
+  color: #f0dfef;
+}
+
+.specialty-card .card-badge {
+  background: #ff981f;
+  color: #381045;
+}
+
+.specialty-card .card-price {
+  color: #ffab40;
+}
+
+.unavailable .card-media .food-image {
+  filter: saturate(.3);
+}
+
+.unavailable .card-add,
+.unavailable .card-choose {
+  background: #9b918b;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.card-add:active,
+.card-choose:active {
+  transform: scale(.95);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .product-card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px #48146516; }
+  .card-media:hover .food-image { transform: scale(1.04); }
+  .card-favorite:hover { color: var(--violet); background: #fff; }
+  .card-add:hover { background: #ec820a; }
+  .card-choose:hover { background: #652285; }
+}
+
+@media (max-width: 1100px) {
+  .product-grid { gap: 16px; }
+  .card-body { padding: 18px 16px 16px; }
+  .card-title { font-size: 21px; }
+}
+
+@media (max-width: 900px) {
+  .product-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 760px) {
+  .product-grid { --mobile-card-min-height: 102px; grid-template-columns: minmax(0, 1fr); grid-auto-rows: 1fr; gap: 10px; }
+  .product-grid .skeleton { height: var(--mobile-card-min-height); border-radius: 16px; }
+  .product-card { grid-template-columns: 50% minmax(0, 1fr); min-height: var(--mobile-card-min-height, 102px); border-radius: 16px; }
+  .card-media { margin: 4px 0 4px 4px; border-radius: 12px; }
+  .card-body { padding: 1px 7px; }
+  .card-badge { margin-bottom: 0; padding: 0 6px; font-size: 8px; letter-spacing: .4px; }
+  .card-title { font-size: 14px; line-height: 1.15; letter-spacing: -.3px; }
+  .card-text { margin-top: 0; font-size: 11px; line-height: 1.25; }
+  .card-options { margin-top: 0; gap: 3px; }
+  .card-options li { padding: 1px 4px; font-size: 9px; line-height: 1.3; }
+  .card-footer { gap: 3px; padding-top: 0; }
+  .card-price { font-size: 18px; }
+  .card-add { width: 44px; height: 44px; }
+  .card-add svg { width: 21px; height: 21px; }
+  .card-choose { gap: 4px; padding: 0 12px; font-size: 12px; }
+  .card-favorite { top: 7px; left: 7px; }
+  .card-favorite svg { width: 17px; height: 17px; }
+  .specialty-card .card-media { margin: 4px 0 4px 4px; border-radius: 12px; }
+
+  /* The main food categories share the menu frame, photo fit and title alignment. */
+  .menu-style-card:not(.specialty-card) { border-color: #d6b6e5; box-shadow: 0 5px 16px #48146508; }
+  .menu-style-card .card-media { background: #f8eddf; }
+  .menu-style-card .card-media .food-image { object-fit: contain; }
+  .menu-style-card .card-badge--vegetarian { display: inline-block; }
+  .menu-style-card .card-badge-spacer { display: block; min-height: 10.4px; flex-shrink: 0; }
+
+  /* Frame the food inside the known portraits instead of their empty backgrounds. */
+  .menu-style-card .card-media--portrait .food-image {
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    width: min(100%, 160px);
+    height: auto;
+    transform: translate(-50%, -47.5%);
+  }
+
+  /* Try the larger photo on one dish before applying it to the rest of the menu. */
+  .large-image-card {
+    grid-template-columns: 50% minmax(0, 1fr);
+    box-shadow: 0 6px 16px rgba(72, 20, 101, .16);
+  }
+  .large-image-card .card-media .food-image { object-fit: contain; }
+  .large-image-card .card-body { padding: 1px 7px; }
+  .large-image-card .card-badge { margin-bottom: 0; }
+  .large-image-card .card-title { font-size: 14px; }
+  .large-image-card .card-price { font-size: 18px; }
+  .large-image-card .card-footer { gap: 4px; padding-top: 0; }
+}
+
+/* Follow the menu's wrapping tiers while allowing longer custom content to grow. */
+@media (max-width: 387px) {
+  .product-grid { --mobile-card-min-height: 116px; }
+}
+
+@media (max-width: 364px) {
+  .product-grid { --mobile-card-min-height: 133px; }
+}
+
+@media (max-width: 360px) {
+  .card-body { padding: 1px 6px; }
+  .card-title { font-size: 14px; }
+  .card-price { font-size: 17px; }
+  .card-choose { padding: 0 10px; }
+  .card-choose svg { display: none; }
+  .large-image-card { grid-template-columns: 50% minmax(0, 1fr); }
+  .large-image-card .card-body { padding: 1px 6px; }
+  .large-image-card .card-price { font-size: 17px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card,
+  .card-media .food-image,
+  .card-favorite,
+  .card-add,
+  .card-choose { transition: none; }
+  .card-add:active,
+  .card-choose:active { transform: none; }
+}

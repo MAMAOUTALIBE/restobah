@@ -1,0 +1,142 @@
+/* Shared raised button surfaces: a warm lower shadow and a light upper edge. */
+:root {
+  --button-shadow-dark: rgba(186, 154, 120, .28);
+  --button-shadow-light: rgba(255, 255, 255, .85);
+}
+
+:is(
+  .icon-button,
+  .header-inner .cart-button,
+  .filter-button,
+  .card-favorite,
+  .card-add,
+  .card-choose,
+  .promo-order,
+  .primary,
+  .quantity button,
+  .mode-switch button,
+  .auth-tabs button,
+  .cart-item .remove,
+  .footer-order,
+  .footer-bottom .footer-top,
+  .bottom-nav .nav-cart
+) {
+  box-shadow: 4px 5px 12px var(--button-shadow-dark), -3px -3px 9px var(--button-shadow-light);
+}
+
+/* Coloured actions keep their orange or violet face. */
+.primary,
+.header-inner .cart-button,
+.card-choose,
+.bottom-nav .nav-cart {
+  --button-shadow-dark: rgba(72, 20, 101, .22);
+  --button-shadow-light: rgba(255, 255, 255, .66);
+}
+
+.card-add {
+  --button-shadow-dark: rgba(181, 100, 17, .26);
+  --button-shadow-light: rgba(255, 255, 255, .7);
+}
+
+/* A subtle highlight reads naturally against a dark photograph or footer. */
+.promo-order,
+.footer-order,
+.footer-bottom .footer-top,
+.specialty-card .card-add {
+  --button-shadow-dark: rgba(20, 8, 29, .4);
+  --button-shadow-light: rgba(255, 255, 255, .17);
+}
+
+/* Compact controls use a shorter relief without changing their footprint. */
+:is(.quantity button, .mode-switch button, .auth-tabs button, .cart-item .remove) {
+  --button-shadow-dark: rgba(166, 139, 108, .23);
+  --button-shadow-light: rgba(255, 255, 255, .8);
+  box-shadow: 2px 3px 7px var(--button-shadow-dark), -2px -2px 6px var(--button-shadow-light);
+}
+
+.product-card .card-favorite,
+.product-card .card-add,
+.product-card .card-choose {
+  box-shadow: 3px 4px 8px var(--button-shadow-dark), -2px -2px 6px var(--button-shadow-light);
+}
+
+.quantity {
+  overflow: visible;
+}
+
+.quantity button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.quantity button:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+/* The category's visible circle is raised; its image and text remain one target. */
+.category .category-image,
+.category.active .category-image {
+  box-shadow: 2px 3px 7px rgba(186, 154, 120, .15), -2px -2px 6px rgba(255, 255, 255, .78);
+}
+
+:is(
+  .icon-button,
+  .header-inner .cart-button,
+  .filter-button,
+  .card-favorite,
+  .card-add,
+  .card-choose,
+  .promo-order,
+  .primary,
+  .quantity button,
+  .mode-switch button,
+  .auth-tabs button,
+  .cart-item .remove,
+  .footer-order,
+  .footer-bottom .footer-top,
+  .bottom-nav .nav-cart
+):active:not(:disabled):not([aria-disabled='true']) {
+  box-shadow: 2px 3px 6px var(--button-shadow-dark), -1px -1px 4px var(--button-shadow-light);
+}
+
+/* A disabled action keeps its existing colour and opacity, with no raised state. */
+:is(
+  .icon-button,
+  .header-inner .cart-button,
+  .filter-button,
+  .card-favorite,
+  .card-add,
+  .card-choose,
+  .promo-order,
+  .primary,
+  .quantity button,
+  .mode-switch button,
+  .auth-tabs button,
+  .cart-item .remove,
+  .footer-order,
+  .footer-bottom .footer-top,
+  .bottom-nav .nav-cart
+):is(:disabled, [aria-disabled='true']) {
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  /* Match the accepted cream hamburger surface across the mobile header. */
+  .header-inner .icon-button,
+  .header-inner .cart-button {
+    --button-shadow-dark: rgba(186, 154, 120, .28);
+    --button-shadow-light: rgba(255, 255, 255, .85);
+    background: #fff4e5;
+  }
+
+  .header-inner .mobile-menu,
+  .header-inner .notification-button,
+  .header-inner .cart-button {
+    --button-shadow-dark: rgba(147, 103, 65, .55);
+    --button-shadow-light: rgba(255, 250, 240, .95);
+    height: auto;
+    aspect-ratio: 1;
+    border-radius: 30%;
+    background: #f0ddc6;
+    box-shadow: 7px 9px 18px var(--button-shadow-dark), -5px -5px 12px var(--button-shadow-light);
+  }
+}

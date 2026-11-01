@@ -1,0 +1,207 @@
+html {
+  background: #f7f0e7;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+}
+
+.menu-proposals,
+.menu-proposals * {
+  box-sizing: border-box;
+}
+
+.menu-proposals {
+  --violet: #481465;
+  --orange: #ff981f;
+  max-width: 1232px;
+  margin: 0 auto;
+  padding: 38px 32px 44px;
+  color: #28241f;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.menu-proposals button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.proposals-intro {
+  margin-bottom: 28px;
+}
+
+.proposals-intro > span {
+  color: #7b568c;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.7px;
+}
+
+.proposals-intro h1 {
+  margin: 8px 0 0;
+  color: #2d1438;
+  font-family: 'Outfit', sans-serif;
+  font-size: 34px;
+  line-height: 1.1;
+  font-weight: 650;
+  letter-spacing: -1px;
+}
+
+.proposals-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 24px;
+}
+
+.proposal {
+  min-width: 0;
+}
+
+.proposal-heading {
+  min-height: 40px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+
+.proposal-number {
+  color: #927c6b;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.proposal-heading h2 {
+  margin: 0;
+  color: #3b2147;
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -.3px;
+}
+
+.proposal-recommended {
+  padding: 4px 7px;
+  border-radius: 8px;
+  background: #ecdff2;
+  color: #481465;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.proposal-phone {
+  padding: 0 14px 18px;
+  overflow: hidden;
+  border: 1px solid #e8d9c7;
+  border-radius: 26px;
+  background: #fff4e5;
+  box-shadow: 0 12px 26px rgba(100, 67, 41, .06);
+}
+
+.proposal-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 76px;
+}
+
+.proposal-header-control {
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 30%;
+  background: #f0ddc6;
+  color: #28241f;
+  box-shadow: 7px 9px 18px rgba(147, 103, 65, .55), -5px -5px 12px rgba(255, 250, 240, .95);
+  cursor: pointer;
+}
+
+.proposal-header-decoration {
+  cursor: default;
+}
+
+.proposal-logo {
+  flex: 1;
+  color: #481465;
+  font-family: 'Outfit', sans-serif;
+  font-size: 31px;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -1.7px;
+  line-height: 1;
+}
+
+.proposal-phone .mobile-menu-panel {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  max-height: none;
+  margin: 0;
+  overflow: visible;
+  z-index: 0;
+}
+
+.proposal-caption {
+  margin: 13px 2px 0;
+  color: #786b60;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.proposal-reopen {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px;
+  border: 1px dashed #cdb8a1;
+  border-radius: 18px;
+  background: transparent;
+  color: #481465;
+  font: 500 13px 'DM Sans', sans-serif;
+  cursor: pointer;
+}
+
+.proposal button:focus-visible {
+  outline: 3px solid #ff981f;
+  outline-offset: 3px;
+}
+
+@media (max-width: 960px) {
+  .menu-proposals {
+    max-width: 460px;
+    padding: 28px 20px 36px;
+  }
+
+  .proposals-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .proposals-intro h1 {
+    font-size: 30px;
+  }
+}
+
+@media (max-width: 360px) {
+  .menu-proposals {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .proposal-heading h2 {
+    font-size: 19px;
+  }
+
+  .proposal-header {
+    gap: 8px;
+  }
+}

@@ -4,16 +4,14 @@
   .header-inner,main{max-width:1360px;padding-left:48px;padding-right:48px}
   .header-inner{gap:28px}
   .brand{flex-shrink:0;gap:2px}
-  .brand-greeting{font-size:10px}
   .stc-logo{font-size:34px;line-height:1}
-  .brand-tagline{font-size:9px}
   .desktop-nav{margin-left:auto;gap:28px;flex-shrink:0}
   .desktop-nav button{font-size:13px;min-height:44px;padding:34px 0}
   .desktop-nav .active:after{bottom:20px;width:5px;height:5px}
   .header-right{gap:12px;flex-shrink:0}
   .notification-button,.header-right>.icon-button{width:40px;height:40px;border-radius:12px;box-shadow:none;background:#fffaf5;border:1px solid #ecdfd0}
   .header-right>.icon-button svg{width:19px;height:19px}
-  .cart-button{min-height:44px;gap:10px;padding:11px 15px;border-radius:12px;box-shadow:0 4px 10px #ce171710;font-size:12px}
+  .cart-button{min-height:44px;gap:10px;padding:11px 15px;border-radius:12px;box-shadow:0 4px 10px #48146510;font-size:12px}
   .open-status{display:none}
   .topline{padding:22px 0 24px;font-size:11px}
   .topline>span{display:flex;color:#776d61}
@@ -23,14 +21,14 @@
   .search-wrap{width:420px;max-width:48%;height:50px;padding:7px 8px 7px 18px;border-radius:14px;background:#fffcf8;box-shadow:0 3px 12px #4b2f0e03}
   .search-wrap input{font-size:12px}
   .search-wrap .filter-button{min-height:34px;font-size:11px;padding:6px 11px 6px 15px}
-  .hero{height:420px;border-radius:24px;background:#790b05}
-  .hero-image{inset:0;background-color:#790b05;background-size:auto 115%;background-repeat:no-repeat;background-position:right center}
-  .hero:after{background:linear-gradient(90deg,#620400 0%,#620400ed 27%,#62040080 43%,transparent 66%)}
+  .hero{height:420px;border-radius:24px;background:#2a1236}
+  .hero-image{inset:0;background-color:#2a1236;background-size:auto 115%;background-repeat:no-repeat;background-position:right center}
+  .hero:after{background:linear-gradient(90deg,#2a1236 0%,#2a1236ed 27%,#2a123680 43%,transparent 66%)}
   .hero-copy{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;width:52%;height:100%;padding:34px 44px 46px}
   .hero .eyebrow{font-size:10px;letter-spacing:1.2px;color:#f2c9ae}
   .hero h1{font-size:64px;line-height:.96;letter-spacing:-1px;margin:17px 0 15px;font-weight:800}
   .hero-copy>p{font-size:12px;line-height:1.6;max-width:275px;color:#f6dfd0}
-  .cream-button{min-height:43px;padding:10px 17px;margin-top:18px;font-size:12px;gap:18px;box-shadow:0 4px 12px #31000020}
+  .cream-button{min-height:43px;padding:10px 17px;margin-top:18px;font-size:12px;gap:18px;box-shadow:0 4px 12px #1a0b2420}
   .cream-button svg{width:22px;height:22px}
   .hero-pagination{position:absolute;left:44px;bottom:17px;transform:none;margin:0;gap:14px}
   .hero-pagination button{position:relative;width:6px;height:6px;padding:0;background:#ffffff65}
@@ -38,32 +36,17 @@
   .hero-pagination .current{width:20px;height:6px;border-radius:5px;background:#fff1da}
   .hero-pagination>span{display:inline;font-size:9px;color:#ecc5b7;margin-left:3px}
   .hero-arrows{right:24px;bottom:19px;gap:9px}
-  .hero-arrows button{height:36px;width:36px;border-color:#ffffff6b;background:#33060030}
+  .hero-arrows button{height:36px;width:36px;border-color:#ffffff6b;background:#1a0b2430}
   .categories{display:grid;grid-template-columns:repeat(var(--category-columns,7),minmax(0,1fr));justify-content:stretch;gap:14px;padding:20px 22px;margin:24px 0 32px;border:1px solid #eadfce;background:#fff9f0;border-radius:20px}
   .category{width:100%;min-width:0;gap:10px;font-size:12px;white-space:normal;text-align:center;line-height:1.3;padding:0}
   .category-image{width:64px;height:64px;border:1px solid #eee2d0;background:#fffdf9;box-shadow:0 3px 10px #a8815010}
-  .category.active .category-image{border-color:var(--red);background:#fff0e3;box-shadow:0 2px 8px #ce171711}
-  .category:hover .category-image{border-color:#ce171766}
+  .category.active .category-image{border-color:#f0b483;background:#f6cca8;box-shadow:0 2px 8px #ff981f18}
+  .category:hover .category-image{border-color:#ff981f66}
   .category.active{font-weight:700}
   .category.long-name>span:last-of-type{font-size:10px;overflow-wrap:anywhere}
   .section-heading{margin-bottom:20px;align-items:center}
   .section-heading h2{font-size:28px;font-weight:600;letter-spacing:-.8px;margin:0}
   .section-heading .text-button{font-size:12px;min-height:44px;gap:12px}
-  .product-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
-  .product-card{display:flex;flex-direction:column;border-radius:17px;border:1px solid #efe5d7;background:#fffdf9;box-shadow:0 4px 14px #65472905}
-  .product-photo{height:auto;aspect-ratio:1.25;margin:8px 8px 0;border-radius:11px;background:#fff7ed}
-  .photo-open>.food-image{height:100%;width:100%}
-  .photo-open>.packshot{background-size:300% auto}
-  .badge{top:10px;left:9px;font-size:8px;padding:6px 8px;letter-spacing:.25px;max-width:75%}
-  .favorite{width:34px;height:34px;top:7px;right:7px;background:#fffcf4e8}
-  .product-info{padding:17px 17px 15px;display:flex;flex-direction:column;flex:1}
-  .product-title h3{font-size:17px;line-height:1.3;font-weight:600;letter-spacing:-.3px}
-  .product-info>p{font-size:11px;line-height:1.6;color:#827466;min-height:36px;margin-top:8px}
-  .product-info>.rating{font-size:10px;margin-top:11px;gap:5px}
-  .product-bottom{margin-top:auto;padding-top:14px;gap:12px}
-  .product-bottom strong{font-size:22px;line-height:1;letter-spacing:-.6px}
-  .add-button{width:40px;height:40px;border-radius:50%}
-  .add-button svg{height:20px;width:20px}
   .offer{height:158px;min-height:158px;margin-top:28px;border-radius:20px;padding:25px 30px;gap:20px}
   .offer-food{object-fit:cover;object-position:center}
   .offer>div{max-width:43%;align-self:center}
@@ -104,7 +87,6 @@
   .notification-button{display:none}
   .cart-button>span{display:none}
   .cart-button{padding:10px 12px;gap:7px}
-  .brand-tagline{font-size:8px}
   .topline{padding:18px 0 21px;font-size:10px}
   .welcome-row h2{font-size:30px}
   .search-wrap{width:350px;max-width:49%;height:46px;padding-left:13px}
@@ -123,12 +105,6 @@
   .category-image{width:55px;height:55px}
   .category.long-name>span:last-of-type{font-size:8px}
   .section-heading h2{font-size:25px}
-  .product-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-  .product-photo{aspect-ratio:1.12}
-  .product-info{padding:14px}
-  .product-title h3{font-size:16px}
-  .product-info>p{font-size:10px;min-height:33px}
-  .product-bottom strong{font-size:21px}
   .offer{height:142px;min-height:142px;padding:22px 23px;border-radius:17px}
   .offer h2{font-size:22px;max-width:265px}
   .offer .small-label{font-size:8px}
@@ -142,9 +118,7 @@
 }
 @media(min-width:761px) and (max-width:850px){
   .header-inner{gap:16px}
-  .brand-greeting{font-size:9px}
   .stc-logo{font-size:31px}
-  .brand-tagline{font-size:7px}
   .desktop-nav{gap:18px}
   .header-right{gap:7px}
   .header-right>.icon-button{width:36px;height:36px}
@@ -158,15 +132,9 @@
   .hero-copy{width:55%;padding-left:26px}
   .hero h1{font-size:48px}
   .hero-image{background-size:auto 100%;background-position:right center}
-  .hero:after{background:linear-gradient(90deg,#620400 0%,#620400eb 24%,#62040060 46%,transparent 72%)}
+  .hero:after{background:linear-gradient(90deg,#2a1236 0%,#2a1236eb 24%,#2a123660 46%,transparent 72%)}
   .categories{gap:4px;padding:15px 7px}
   .category-image{height:51px;width:51px}
-  .product-grid{gap:13px}
-  .product-info{padding:12px}
-  .product-title h3{font-size:14px}
-  .product-info>p{font-size:10px}
-  .favorite{width:31px;height:31px}
-  .badge{font-size:7px;padding:5px 6px}
   .offer h2{font-size:21px}
   .offer>div{max-width:43%}
   .values{gap:10px}
@@ -176,7 +144,7 @@
   .values small{font-size:8px}
   .account-page:not(:has(.auth-card)){grid-template-columns:1fr;max-width:700px;margin:auto}
 }
-@media(min-width:1600px){.header-inner,main{max-width:1440px;padding-left:52px;padding-right:52px}.hero{height:440px}.hero-copy{padding-left:48px}.hero h1{font-size:68px}.hero-pagination{left:48px}.product-photo{aspect-ratio:1.3}.footer-shell{max-width:1336px}}
+@media(min-width:1600px){.header-inner,main{max-width:1440px;padding-left:52px;padding-right:52px}.hero{height:440px}.hero-copy{padding-left:48px}.hero h1{font-size:68px}.hero-pagination{left:48px}.footer-shell{max-width:1336px}}
 @media(min-width:761px){.hero{--hero-art-width:724.5px}.hero-image{mask-image:linear-gradient(90deg,transparent calc(100% - var(--hero-art-width)),#000 calc(100% - var(--hero-art-width) + 180px))}}
 @media(min-width:761px) and (max-width:1100px){.hero{--hero-art-width:583.2px}}
 @media(min-width:761px) and (max-width:850px){.hero{--hero-art-width:540px}}

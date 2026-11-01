@@ -1,13 +1,14 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import include,path
 from shop import views
 from shop.payments import PaymentView,stripe_webhook
 admin.site.site_header='STC · Administration'
 admin.site.site_title='STC'
 admin.site.index_title='Votre restaurant'
 urlpatterns=[
+    path('crm/',include('shop.crm_urls')),
     path('admin/',admin.site.urls),
     path('api/health/',views.HealthView.as_view()),
     path('api/restaurant/',views.RestaurantView.as_view()),

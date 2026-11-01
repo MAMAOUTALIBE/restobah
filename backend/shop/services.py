@@ -22,12 +22,12 @@ def period_text(periods):
 
 def hours_summary(restaurant, periods):
     """Footer summary: one line when every day shares the same hours, otherwise today's hours."""
-    by_day = [[(p.opens,p.closes) for p in periods if p.weekday == day] for day in range(7)]
-    if by_day[0] and all(day == by_day[0] for day in by_day):
-        return 'Tous les jours', period_text([p for p in periods if p.weekday == 0])
     today = timezone.localdate()
     if restaurant.closures.filter(date=today).exists():
         return 'Aujourd’hui', 'Fermé exceptionnellement'
+    by_day = [[(p.opens,p.closes) for p in periods if p.weekday == day] for day in range(7)]
+    if by_day[0] and all(day == by_day[0] for day in by_day):
+        return 'Tous les jours', period_text([p for p in periods if p.weekday == 0])
     return f'Aujourd’hui ({WEEKDAYS[today.weekday()].lower()})', period_text([p for p in periods if p.weekday == today.weekday()])
 
 def restaurant_data():
@@ -56,14 +56,15 @@ def order_data(order, include_token=False, include_customer=False):
         result['customer'] = order.customer
     return result
 
-def authorized_order(request,pk,token=None,lock=False):
+def authorized_order(request,pk,token=None,lock=False,allow_staff=False):
     qs = Order.objects.select_for_update() if lock else Order.objects
     try:
         order = qs.get(pk=pk)
     except Order.DoesNotExist:
         raise NotFound('Commande introuvable.')
     provided = token or request.query_params.get('token','')
-    owner = request.user.is_authenticated and (request.user.is_staff or order.user_id == request.user.id)
+    staff_access = allow_staff and request.user.is_active and request.user.is_staff and request.user.has_perm('shop.view_order')
+    owner = request.user.is_authenticated and request.user.is_active and (staff_access or order.user_id == request.user.id)
     guest = isinstance(provided,str) and bool(provided) and hmac.compare_digest(provided.encode('utf-8'),order.access_token.encode('utf-8'))
     if not owner and not guest:
         raise NotFound('Commande introuvable.')

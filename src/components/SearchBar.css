@@ -1,0 +1,73 @@
+/* Mobile search and filter match the header's warm raised surfaces. */
+@media (max-width: 760px) {
+  .welcome-row .search-wrap {
+    --button-shadow-dark: rgba(147, 103, 65, .55);
+    --button-shadow-light: rgba(255, 250, 240, .95);
+    width: calc(100% - 50px);
+    max-width: none;
+    height: 40px;
+    margin: 0;
+    padding: 0 14px;
+    gap: 10px;
+    border: 0;
+    border-radius: 999px;
+    background: #f0ddc6;
+    box-shadow: 7px 9px 18px var(--button-shadow-dark),
+      -5px -5px 12px var(--button-shadow-light);
+  }
+
+  .welcome-row .search-wrap > svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: #28241f;
+  }
+
+  .welcome-row .search-wrap input {
+    width: 100%;
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 6px 0;
+  }
+
+  .welcome-row .search-wrap input::placeholder {
+    color: #6b5e52;
+    opacity: 1;
+  }
+
+  .welcome-row .search-wrap input:focus-visible {
+    outline: 2px solid var(--violet);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  .welcome-row .search-wrap > button:not(.filter-button) {
+    width: 28px;
+    height: 40px;
+    flex: 0 0 28px;
+    padding: 0;
+    font-size: 20px;
+    color: #62564c;
+  }
+
+  .welcome-row .search-wrap .filter-button {
+    top: 0;
+    right: -50px;
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 30%;
+    background: #f0ddc6;
+    box-shadow: 7px 9px 18px var(--button-shadow-dark),
+      -5px -5px 12px var(--button-shadow-light);
+  }
+
+  .welcome-row .search-wrap .filter-button svg {
+    width: 20px;
+    height: 20px;
+  }
+}

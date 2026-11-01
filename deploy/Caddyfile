@@ -12,7 +12,7 @@
         Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com"
         -Server
     }
-    @backend path /api/* /admin/* /static/*
+    @backend path /api/* /admin/* /crm /crm/* /static/*
     handle @backend {
         reverse_proxy backend:8000 {
             header_up X-Forwarded-Proto https

@@ -1,0 +1,159 @@
+/* Presentation is reusable in design previews; only Header anchors the dropdown. */
+.mobile-menu-panel,
+.mobile-menu-panel * {
+  box-sizing: border-box;
+}
+
+.mobile-menu-panel {
+  --mobile-menu-hover: #f2e3ce;
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  max-height: var(--mobile-menu-max-height, calc(100dvh - 110px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px;
+  color: #481465;
+  font-family: 'DM Sans', sans-serif;
+  background: #fff5e7;
+  border: 1px solid #ead9c3;
+  border-radius: 22px;
+  box-shadow: 8px 10px 24px #93674124, -3px -3px 12px #ffffff99;
+  scrollbar-width: thin;
+  scrollbar-color: #cdb8cc transparent;
+}
+
+.mobile-menu-panel .mobile-menu-item {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 15px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 6px 10px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 14px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  transition: background .15s, color .15s;
+}
+
+.mobile-menu-item-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  background: #f1e2ce;
+  border-radius: 10px;
+}
+
+.mobile-menu-item-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.mobile-menu-item-chevron {
+  opacity: .5;
+}
+
+.mobile-menu-panel .mobile-menu-item[aria-current='page'] {
+  color: #fff7ed;
+  background: #481465;
+}
+
+.mobile-menu-item[aria-current='page'] .mobile-menu-item-icon {
+  background: #ffffff1f;
+}
+
+.mobile-menu-panel .mobile-menu-item:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: -4px;
+}
+
+/* Compact shortcut tiles, with the account destination across the final row. */
+.mobile-menu-panel--grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+}
+
+.mobile-menu-panel--grid .mobile-menu-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  min-height: 92px;
+  padding: 12px 8px;
+  background: #f4e7d5;
+  text-align: center;
+}
+
+.mobile-menu-panel--grid .mobile-menu-item:last-child {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  min-height: 52px;
+}
+
+.mobile-menu-panel--grid .mobile-menu-item-chevron {
+  display: none;
+}
+
+/* Stronger STC treatment for the alternate proposal. */
+.mobile-menu-panel--violet {
+  --mobile-menu-hover: #ffffff14;
+  color: #fff4e5;
+  background: linear-gradient(135deg, #562073, #351044);
+  border-color: #6e3a82;
+  box-shadow: 8px 10px 24px #35104429, -3px -3px 12px #ffffff38;
+}
+
+.mobile-menu-panel--violet .mobile-menu-item-icon {
+  background: #ffffff0f;
+}
+
+.mobile-menu-panel--violet .mobile-menu-item[aria-current='page'] {
+  color: #351044;
+  background: #ffab3f;
+}
+
+.mobile-menu-panel--violet .mobile-menu-item[aria-current='page'] .mobile-menu-item-icon {
+  background: #ffffff33;
+}
+
+@media (hover: hover) {
+  .mobile-menu-panel .mobile-menu-item:not([aria-current='page']):hover {
+    background: var(--mobile-menu-hover);
+  }
+}
+
+@media (max-width: 760px) {
+  .site-header {
+    position: relative;
+    z-index: 55;
+  }
+
+  .site-header .mobile-menu-position {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 18px;
+    left: 18px;
+    z-index: 60;
+  }
+}
+
+@media (min-width: 761px) {
+  .site-header .mobile-menu-position {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu-panel .mobile-menu-item {
+    transition: none;
+  }
+}

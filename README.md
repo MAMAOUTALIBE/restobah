@@ -12,6 +12,7 @@ npm run dev:all
 ```
 
 - Site : http://localhost:5173
+- Espace gérant : http://localhost:5173/crm/
 - Administration : http://localhost:5173/admin/
 - Santé API : http://localhost:5173/api/health/
 
@@ -40,6 +41,19 @@ Ces deux commandes s’exécutent dans deux terminaux à la racine du projet. `n
 
 Par défaut, `STC_DEMO_MODE=1` et `STC_PAYMENT_MODE=simulation` : les commandes sont réellement enregistrées dans la base locale, mais aucun restaurant ni paiement réel n’est déclenché. Les données du restaurant et les photos sont illustratives. Les retours de Stripe ne marquent jamais une commande comme payée ; seul un webhook vérifié le permet.
 
+## CRM du restaurant
+
+Le nouvel espace `/crm/` reprend la maquette crème, violet et orange avec quatre rubriques : **Accueil, Commandes, Ma carte et Mon restaurant**. Il utilise la même base et les mêmes règles métier que le site, avec une connexion gérant et des permissions vérifiées côté serveur. Le compte administrateur local préparé par le setup dispose des droits nécessaires ; les accès restent dans le fichier privé indiqué au démarrage.
+
+- Plats : création et modification, photo JPEG/PNG/WebP contrôlée, prix avec virgule, disponibilités, allergènes et options existantes.
+- Commandes : filtres, détails, historique et passage en préparation, prête puis terminée ; les protections de paiement restent actives.
+- Restaurant : coordonnées, pause des commandes, retrait/livraison, frais, zones, horaires avec plusieurs services et fermeture après minuit, fermetures exceptionnelles.
+- Synchronisation : le site déjà ouvert actualise la carte et les réglages en arrière-plan ; les commandes et l’accueil du CRM s’actualisent automatiquement.
+
+Une ancienne base PostgreSQL initialisée avec les identifiants de démonstration peut nécessiter le réalignement des séquences. La commande dédiée `repair_crm_sequences` préserve les données et ne recrée aucun plat : voir [la procédure de maintenance](docs/OPERATIONS.md).
+
+[Bilan CRM du 1er novembre 2026](docs/crm/DELIVERY.md) : équipe de dix spécialistes, fonctionnalités, contrôles exécutés et limites. L’instance locale reste en mode démonstration ; cette livraison ne publie pas la production et n’active pas les paiements réels.
+
 ## Vérifications
 
 ```sh
@@ -53,7 +67,13 @@ npm run test:e2e:isolated
 
 `npm run check` exécute TypeScript, ESLint et la compilation de production. Les tests Django vérifient les règles métier et la sécurité, dont des webhooks Stripe signés. Playwright teste l’API et les parcours sur ordinateur et mobile.
 
-`npm run test:e2e:isolated` crée une base SQLite, un dossier d’accès administrateur et un dossier d’e-mails temporaires, puis les supprime : la base locale et `.runtime/admin-credentials.txt` ne sont pas touchés. `npm run test:e2e` cible les serveurs déjà lancés (ou `E2E_BASE_URL`) et ajoute des données de recette à leur base. Une configuration CI PostgreSQL est fournie dans `.github/workflows/ci.yml` ; elle n’a pas été publiée automatiquement.
+La recette isolée complète utilise un seul worker par défaut, car les scénarios CRM modifient temporairement les réglages du même restaurant. Pour cibler le CRM :
+
+```sh
+python3 scripts/e2e.py tests/crm.spec.ts tests/crm-visual.spec.ts --project=desktop --project=tablet --project=mobile --workers=1
+```
+
+`npm run test:e2e:isolated` crée une base SQLite et des dossiers d’accès administrateur, d’e-mails et de photos temporaires, puis les supprime : la base locale, les médias et `.runtime/admin-credentials.txt` ne sont pas touchés. `npm run test:e2e` cible les serveurs déjà lancés (ou `E2E_BASE_URL`) et ajoute des données de recette à leur base ; les scénarios d’écriture CRM exigent l’instance isolée. Une configuration CI PostgreSQL est fournie dans `.github/workflows/ci.yml` ; elle n’a pas été publiée automatiquement.
 
 ## Variante Docker avec PostgreSQL
 

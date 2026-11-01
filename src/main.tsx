@@ -4,3 +4,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><
 import "./stc.css";
 
 import "./responsive.css";
+
+import './button-effects.css';

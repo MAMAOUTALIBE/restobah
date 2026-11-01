@@ -1,0 +1,71 @@
+/* Five larger categories fit on mobile; the complete catalogue stays in the rail. */
+@media (max-width: 760px) {
+  .categories.category-strip {
+    --category-strip-gap: 8px;
+    display: grid;
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: calc((100% - (var(--category-visible-count) - 1) * var(--category-strip-gap)) / var(--category-visible-count));
+    justify-content: start;
+    align-items: start;
+    gap: 0 var(--category-strip-gap);
+    max-width: 100%;
+    margin: 14px 0 12px;
+    padding: 6px 4px 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 4px;
+    scrollbar-width: none;
+  }
+
+  .category-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .category-strip .category {
+    min-width: 0;
+    width: 100%;
+    gap: 8px;
+    padding: 0;
+    scroll-snap-align: start;
+    white-space: normal;
+    font-size: clamp(9px, 2.55vw, 11px);
+    line-height: 1.2;
+  }
+
+  .category-strip .category .category-image {
+    width: min(66px, calc(100% - 4px));
+    height: auto;
+    aspect-ratio: 1;
+    padding: 4px;
+    flex-shrink: 0;
+  }
+
+  .category-strip .category-image > img.food-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .category-strip .category .category-label,
+  .category-strip .category.long-name .category-label {
+    width: 100%;
+    min-height: 2.4em;
+    font-size: inherit;
+    line-height: inherit;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+
+  .category-strip .category:focus-visible {
+    outline-offset: -2px;
+  }
+}
+
+@media (max-width: 360px) {
+  .categories.category-strip {
+    --category-strip-gap: 4px;
+  }
+}

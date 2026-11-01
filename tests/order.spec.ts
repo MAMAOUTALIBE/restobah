@@ -25,7 +25,7 @@ test('parcours de commande complet, persistance et responsive',async({page})=>{
 test('favoris, filtres, suppression et commande à emporter',async({page})=>{
  await page.goto('/');await page.getByRole('button',{name:'Ajouter Le Bucket STC aux favoris'}).click();await page.reload();await expect(page.getByRole('button',{name:'Retirer Le Bucket STC des favoris'})).toBeVisible();
  await page.getByRole('button',{name:'Afficher les filtres'}).click();await page.getByLabel('Végétarien').check();await expect(page.locator('.product-card')).toHaveCount(4);await page.getByRole('button',{name:'Réinitialiser'}).click();
- await page.getByRole('button',{name:'Promotion 2'}).click();await expect(page.getByRole('heading',{name:'Ça croustille. Ça se partage.'})).toBeVisible();
+ await page.getByRole('button',{name:'Promotion 2'}).click();await expect(page.getByRole('heading',{name:'À partager.'})).toBeVisible();
  await page.getByRole('button',{name:'Voir tout'}).click();await page.getByRole('button',{name:'Ajouter Le Cookie Choco',exact:true}).click();await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toHaveCount(0);
  await page.getByRole('button',{name:'Ajouter Le Cookie Choco',exact:true}).click();await page.getByRole('button',{name:'Ajouter · 3,90 €'}).click();await page.getByRole('button',{name:/Mon panier/}).click();
  await page.getByRole('button',{name:'Supprimer Le Cookie Choco'}).click();await expect(page.getByRole('dialog').getByRole('heading',{name:'Une petite faim ?'})).toBeVisible();await page.getByRole('button',{name:'Fermer',exact:true}).click();

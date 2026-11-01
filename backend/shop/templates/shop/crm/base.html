@@ -1,0 +1,42 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>{% block title %}Mon restaurant{% endblock %} · STC</title>
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="stylesheet" href="{% static 'shop/crm.css' %}">
+  <script src="{% static 'shop/crm.js' %}" defer></script>
+</head>
+<body class="crm-app">
+<a class="crm-skip" href="#crm-main">Aller au contenu</a>
+<aside class="crm-sidebar" aria-label="Espace gérant">
+  <a class="crm-brand" href="{% url 'crm:dashboard' %}" aria-label="STC — Accueil du restaurant"><strong>STC<span class="crm-brand-rays" aria-hidden="true">✳</span></strong><span>Mon restaurant</span></a>
+  <nav class="crm-navigation" aria-label="Gestion du restaurant">
+    <a href="{% url 'crm:dashboard' %}" {% if section == 'accueil' %}aria-current="page"{% endif %}>{% include 'shop/crm/icon.html' with name='home' %}<span>Accueil</span></a>
+    <a href="{% url 'crm:orders' %}" {% if section == 'commandes' %}aria-current="page"{% endif %}>{% include 'shop/crm/icon.html' with name='orders' %}<span>Commandes</span></a>
+    <a href="{% url 'crm:menu' %}" {% if section == 'carte' %}aria-current="page"{% endif %}>{% include 'shop/crm/icon.html' with name='menu' %}<span>Ma carte</span></a>
+    <a href="{% url 'crm:restaurant' %}" {% if section == 'restaurant' %}aria-current="page"{% endif %}>{% include 'shop/crm/icon.html' with name='store' %}<span>Mon restaurant</span></a>
+  </nav>
+  <div class="crm-sidebar-bottom">
+    <details class="crm-help"><summary>{% include 'shop/crm/icon.html' with name='help' %}Besoin d’aide ?</summary><p>Les commandes arrivent dans <strong>Commandes</strong>. Gérez vos plats dans <strong>Ma carte</strong> et vos horaires dans <strong>Mon restaurant</strong>.</p></details>
+    <div class="crm-operator">{% include 'shop/crm/icon.html' with name='user' %}<span>{{ operator_name|default:'Équipe STC' }}</span></div>
+    <form method="post" action="{% url 'crm:logout' %}">{% csrf_token %}<button class="crm-text-button" type="submit">{% include 'shop/crm/icon.html' with name='logout' %}Se déconnecter</button></form>
+  </div>
+</aside>
+<div class="crm-workspace">
+  <header class="crm-topbar">
+    <a class="crm-mobile-brand" href="{% url 'crm:dashboard' %}" aria-label="STC — Accueil du restaurant">STC</a>
+    <span class="crm-demo-label">{% if demo_mode %}<i aria-hidden="true"></i>Mode démonstration{% else %}Espace gérant{% endif %}</span>
+    <div class="crm-topbar-actions"><span class="crm-status {% if ordering_enabled and is_open %}is-open{% else %}is-paused{% endif %}"><i aria-hidden="true"></i>{% if not ordering_enabled %}Commandes en pause{% elif is_open %}Commandes ouvertes{% else %}Fermé selon les horaires{% endif %}</span><a href="/" target="_blank" rel="noopener noreferrer" class="crm-button crm-button-outline crm-view-site">{% include 'shop/crm/icon.html' with name='eye' %}<span>Voir mon site</span></a></div>
+    <details class="crm-mobile-account"><summary aria-label="Compte du gérant">{% include 'shop/crm/icon.html' with name='user' %}</summary><div><span>{{ operator_name|default:'Équipe STC' }}</span><form method="post" action="{% url 'crm:logout' %}">{% csrf_token %}<button type="submit" class="crm-text-button">Se déconnecter</button></form></div></details>
+  </header>
+  <main class="crm-main" id="crm-main">
+    {% if messages %}<div class="crm-messages" aria-live="polite">{% for message in messages %}<div class="crm-alert {% if message.tags %}crm-alert-{{ message.tags }}{% endif %}" {% if 'error' in message.tags %}role="alert"{% else %}role="status"{% endif %}>{{ message }}</div>{% endfor %}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

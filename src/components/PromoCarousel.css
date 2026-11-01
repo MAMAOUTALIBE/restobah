@@ -1,0 +1,174 @@
+/* Isolated from the legacy hero rules so the banner scales as one composition. */
+.promo-banner {
+  position: relative;
+  isolation: isolate;
+  height: 400px;
+  overflow: hidden;
+  color: #fff7ed;
+  background: radial-gradient(ellipse at 70% 30%, #4e1b63, #25102f 76%);
+  border: 1px solid #5b2b6638;
+  border-radius: 26px;
+}
+
+.promo-visual {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  object-fit: contain;
+  object-position: right center;
+  mask-image: linear-gradient(90deg, transparent, #000 50%);
+}
+
+.promo-visual--meal {
+  inset: 20px 28px 20px auto;
+  width: 54%;
+  height: calc(100% - 40px);
+  object-fit: cover;
+  border-radius: 22px;
+  mask-image: linear-gradient(90deg, transparent, #000 24%);
+}
+
+.promo-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  width: 47%;
+  height: 100%;
+  padding: 24px 0 40px 48px;
+}
+
+.promo-title {
+  font-family: Outfit, sans-serif;
+  font-size: 72px;
+  line-height: 1;
+  letter-spacing: -2.5px;
+  font-weight: 750;
+}
+
+.promo-title > span {
+  display: block;
+}
+
+.promo-title-accent {
+  color: #ffab3f;
+}
+
+.promo-title--brand .promo-title-accent {
+  font-size: 1.5em;
+  line-height: .95;
+  letter-spacing: -3px;
+}
+
+.promo-order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  min-height: 48px;
+  margin-top: 26px;
+  padding: 0 20px;
+  color: #32123e;
+  background: #ffab3f;
+  border: 1px solid #ffbc63;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 750;
+  box-shadow: 0 5px 16px #12091b16;
+  transition: background .2s, transform .2s;
+}
+
+.promo-pagination {
+  position: absolute;
+  bottom: 10px;
+  left: 36px;
+  display: flex;
+}
+
+.promo-page {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 12px;
+}
+
+.promo-page > span {
+  width: 6px;
+  height: 6px;
+  background: #ffffff70;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px #32123e99;
+  transition: width .2s, background .2s;
+}
+
+.promo-page[aria-current='true'] > span {
+  width: 22px;
+  background: #fff7ed;
+}
+
+.promo-order:focus-visible,
+.promo-page:focus-visible {
+  outline: 3px solid #fff4e3;
+  outline-offset: -5px;
+}
+
+.promo-page:focus-visible {
+  background: #32123ee6;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .promo-order:not(:disabled):hover { background: #ffbd68; transform: translateY(-2px); }
+  .promo-page:hover > span { background: #fff7ed; }
+}
+
+/* Fade the desktop photograph itself, rather than its wider contain box. */
+@media (min-width: 761px) {
+  .promo-visual:not(.promo-visual--meal) {
+    inset: 0 0 0 auto;
+    width: 600px;
+    mask-image: linear-gradient(90deg, transparent, #000 32%);
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  .promo-banner { height: 330px; border-radius: 22px; }
+  .promo-visual:not(.promo-visual--meal) { width: 495px; }
+  .promo-content { padding-left: 32px; }
+  .promo-title { font-size: 58px; }
+  .promo-pagination { left: 20px; bottom: 4px; }
+}
+
+@media (max-width: 760px) {
+  .promo-banner { height: clamp(190px, 56vw, 280px); border-radius: 20px; }
+  .promo-visual { inset: 0 -20px 0 auto; width: calc(100% + 20px); }
+  .promo-visual--meal {
+    inset: 12px -10px 12px auto;
+    width: 62%;
+    height: calc(100% - 24px);
+    border-radius: 18px;
+    mask-image: linear-gradient(90deg, transparent, #000 25%);
+  }
+  .promo-content { width: 48%; padding: 10px 0 16px 20px; }
+  .promo-title { font-size: clamp(29px, 8.8vw, 48px); letter-spacing: -1px; }
+  .promo-title--brand .promo-title-accent { letter-spacing: -1.5px; }
+  .promo-order { min-height: 44px; margin-top: 17px; gap: 10px; padding: 0 13px; font-size: 11px; }
+  .promo-order svg { width: 16px; height: 16px; }
+  .promo-pagination { left: auto; right: 4px; bottom: 0; }
+}
+
+@media (max-width: 360px) {
+  .promo-visual { right: -40px; width: calc(100% + 40px); }
+  .promo-visual--meal { right: -16px; width: 62%; }
+  .promo-content { padding-left: 16px; }
+  .promo-order { gap: 7px; padding: 0 11px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-order,
+  .promo-page > span { transition: none; }
+}

@@ -222,7 +222,9 @@ class OrdersView(ProtectedView):
 
 class OrderView(APIView):
     def get(self,request,pk):
-        order = authorized_order(request,pk)
+        order = authorized_order(request,pk,allow_staff=True)
         # Guest token grants access to totals and tracking, not contact PII.
-        owner = request.user.is_authenticated and (request.user.is_staff or order.user_id==request.user.id)
+        owner = request.user.is_authenticated and request.user.is_active and (
+            order.user_id==request.user.id or request.user.is_staff and request.user.has_perm('shop.view_order')
+        )
         return Response(order_data(order,include_customer=owner))

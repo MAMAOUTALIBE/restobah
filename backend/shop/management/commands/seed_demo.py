@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from shop.models import Restaurant,OpeningHour,Category,OptionGroup,Choice,Product
+from shop.sequences import lock_seeded_tables, repair_crm_sequences
 
 PRODUCTS=[
 (1,'Le Bucket STC','Poulet','4 morceaux de poulet croustillant, frites et sauce au choix.','4 morceaux + frites + sauce au choix.','11.90','stc-menu-1','BEST-SELLER','4,9',False),
@@ -18,6 +19,7 @@ class Command(BaseCommand):
     help='Crée les données STC manquantes sans écraser les modifications de l’administration.'
     @transaction.atomic
     def handle(self,*args,**options):
+        lock_seeded_tables()
         restaurant,created=Restaurant.objects.get_or_create(pk=1,defaults={'delivery_postal_codes':['75011','75010','75012','75020']})
         if created:
             OpeningHour.objects.bulk_create([OpeningHour(restaurant=restaurant,weekday=i,opens=time(11,30),closes=time(23)) for i in range(7)])
@@ -40,4 +42,5 @@ class Command(BaseCommand):
         promotion,new=Product.objects.get_or_create(pk=90,defaults={'name':'Menu Original — Offre du moment','category':categories['Menus'],'description':'Burger poulet croustillant, frites et boisson au choix. Remise de 30 % incluse.','summary':'Le Menu Original à prix réduit.','price':Decimal('11.13'),'image':'stc-menu-2','badge':'−30 %','rating':'4,8','promotional':True,'promotion_source':original,'discount_percent':30,'position':90,'allergens':original.allergens})
         if new:
             promotion.option_groups.set(original.option_groups.all())
+        repair_crm_sequences()
         self.stdout.write(self.style.SUCCESS('Catalogue STC prêt : données manquantes créées, données existantes conservées.'))

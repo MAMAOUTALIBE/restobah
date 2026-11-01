@@ -1,0 +1,69 @@
+/* The original pink artwork stays intact; other categories use their own dish. */
+.offer.category-offer--product .offer-food {
+  inset: 0 auto 0 66%;
+  width: auto;
+  max-width: 60%;
+  height: 100%;
+  transform: translateX(-50%);
+  object-fit: contain;
+  object-position: center;
+  mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent),
+    linear-gradient(180deg, transparent, #000 6%, #000 94%, transparent);
+  mask-composite: intersect;
+}
+
+.offer.category-offer--product > .category-offer-copy {
+  width: 43%;
+  max-width: 43%;
+}
+
+.offer.category-offer--product h2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.offer.category-offer--product p {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+
+.offer.category-offer--selection p {
+  color: var(--violet);
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .offer.category-offer--product > .category-offer-copy {
+    width: 45%;
+    max-width: 45%;
+  }
+
+  .offer.category-offer--product h2 {
+    display: block;
+    max-width: 100%;
+    font-size: 14px;
+    line-height: 1.1;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .offer.category-offer--product p {
+    max-width: 100%;
+    line-height: 1.3;
+  }
+
+  .offer.category-offer--selection p {
+    font-size: 11px;
+  }
+}
+
+@media (min-width: 420px) and (max-width: 760px) {
+  .offer.category-offer--product h2 { font-size: 18px; }
+  .offer.category-offer--selection p { margin-top: 2px; font-size: 12px; line-height: 1.2; }
+}

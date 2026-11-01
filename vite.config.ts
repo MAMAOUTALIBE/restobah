@@ -9,7 +9,7 @@ export default defineConfig({
   plugins:[react()],
   server:{
     host:'127.0.0.1',port:webPort,strictPort:true,
-    proxy:Object.fromEntries(['/api','/admin','/static','/media'].map(path=>[path,{target:apiTarget,changeOrigin:false}])),
+    proxy:Object.fromEntries(['/api','/admin','/crm','/static','/media'].map(path=>[path,{target:apiTarget,changeOrigin:false}])),
   },
   preview:{host:'127.0.0.1',port:4173,strictPort:true},
 });

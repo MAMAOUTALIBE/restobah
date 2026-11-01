@@ -57,6 +57,7 @@ def main():
             'EMAIL_BACKEND': 'shop.email_backend.PrivateFileEmailBackend',
             'STC_EMAIL_FILE_PATH': str(base / 'emails'),
             'STC_RUNTIME_DIR': str(base / 'runtime'),
+            'STC_MEDIA_ROOT': str(base / 'media'),
             'FRONTEND_URL': web,
             'DJANGO_CSRF_TRUSTED_ORIGINS': f'{web},http://127.0.0.1:{WEB_PORT}',
             'STC_API_TARGET': f'http://127.0.0.1:{API_PORT}',
@@ -71,7 +72,9 @@ def main():
         ]
         try:
             wait(f'{web}/api/health/')
-            result = subprocess.run(['npx', 'playwright', 'test', *sys.argv[1:]], cwd=ROOT, env=env)
+            # The complete suite changes shared restaurant settings: keep its default run serial.
+            arguments = sys.argv[1:] or ['--workers=1']
+            result = subprocess.run(['npx', 'playwright', 'test', *arguments], cwd=ROOT, env=env)
             if result.returncode:
                 print((base / 'backend.log').read_text()[-4000:], file=sys.stderr)
             return result.returncode

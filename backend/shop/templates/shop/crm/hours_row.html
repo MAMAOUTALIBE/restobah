@@ -1,0 +1,9 @@
+<div class="crm-hours-row" data-hours-row>
+  {% for hidden in hour_form.hidden_fields %}{{ hidden }}{% endfor %}
+  {% include 'shop/crm/field.html' with field=hour_form.weekday %}
+  {% include 'shop/crm/field.html' with field=hour_form.opens %}
+  {% include 'shop/crm/field.html' with field=hour_form.closes %}
+  <div class="crm-hours-delete">{% include 'shop/crm/check.html' with field=hour_form.DELETE %}</div>
+  <p class="crm-hours-note" data-hours-note></p>
+  {% if hour_form.non_field_errors %}<div class="crm-field-full crm-field-error">{{ hour_form.non_field_errors }}</div>{% endif %}
+</div>
