@@ -14,6 +14,9 @@ const products: Product[] = [
     optionGroups: [{
       id: 'drink', name: 'Votre boisson', min: 1, max: 1,
       choices: [{id: 'drink-cola', name: 'Cola 33 cl', price: 0}],
+    }, {
+      id: 'extras', name: 'Vos suppléments', min: 0, max: 1,
+      choices: [{id: 'extra-cheddar', name: 'Cheddar', price: 1}],
     }],
   },
   {
@@ -43,10 +46,10 @@ const settings: RestaurantSettings = {
 };
 
 // Read-only catalogue fixtures keep these UI regressions independent of local restaurant data.
-async function openCatalogue(page: Page) {
+async function openCatalogue(page: Page, catalogue = products) {
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname;
-    const data = path === '/api/products/' ? products
+    const data = path === '/api/products/' ? catalogue
       : path === '/api/restaurant/' ? settings
       : path === '/api/categories/' ? [{name: 'Menus', position: 0}, {name: 'Poulet', position: 1}]
       : path === '/api/auth/me/' ? {user: null} : [];
@@ -55,12 +58,14 @@ async function openCatalogue(page: Page) {
   await page.goto('/');
   await expect(page.locator('.product-grid').getByRole('heading', {name: 'Le Bucket STC', exact: true})).toBeVisible();
   await page.getByRole('button', {name: 'Voir tout', exact: true}).click();
-  await expect(page.locator('.product-card')).toHaveCount(products.length);
+  await expect(page.locator('.product-card')).toHaveCount(catalogue.length);
+  await page.evaluate(() => document.fonts.ready);
 }
 
 test('sur mobile chaque carte occupe sa ligne, avec photo, prix et action accessibles', async ({page}) => {
+  await page.emulateMedia({reducedMotion: 'reduce'});
   await openCatalogue(page);
-  for (const width of [320, 390, 760]) {
+  for (const width of [320, 390, 760, 768, 820, 900, 901, 1024]) {
     await page.setViewportSize({width, height: 900});
     const rows = await page.locator('.product-grid').evaluate(grid => {
       const gridRect = grid.getBoundingClientRect();
@@ -89,8 +94,10 @@ test('sur mobile chaque carte occupe sa ligne, avec photo, prix et action access
 });
 
 test('le gabarit mobile reste identique en filtrant menus, burgers, poulet ou accompagnements', async ({page}) => {
+  await page.emulateMedia({reducedMotion: 'reduce'});
   await openCatalogue(page);
-  for (const width of [320, 360, 364, 365, 375, 387, 388, 390, 395, 396, 400, 430, 760]) {
+  test.setTimeout(90_000);
+  for (const width of [320, 360, 364, 365, 375, 387, 388, 390, 395, 396, 400, 430, 600, 760, 761, 768, 820, 900, 901, 1024]) {
     await page.setViewportSize({width, height: 1000});
     const heights: number[] = [];
     const titleOffsets: number[] = [];
@@ -127,6 +134,85 @@ test('le gabarit mobile reste identique en filtrant menus, burgers, poulet ou ac
     expect(Math.max(...heights) - Math.min(...heights), `${width}px filtered category heights`).toBeLessThan(1);
     expect(Math.max(...titleOffsets) - Math.min(...titleOffsets), `${width}px title alignment`).toBeLessThan(1);
   }
+});
+
+test('la carte conserve sa forme et grandit sans s’aplatir du mobile à la tablette', async ({page}) => {
+  await page.emulateMedia({reducedMotion: 'reduce'});
+  await openCatalogue(page);
+  let previous: {width: number; height: number} | undefined;
+  let referenceRatio: number | undefined;
+  for (const width of [320, 360, 364, 365, 375, 387, 388, 390, 395, 396, 400, 430, 600, 760, 761, 768, 820, 900, 901, 1024]) {
+    await page.setViewportSize({width, height: 1000});
+    const shape = await page.locator('.formula-card').evaluate(card => {
+      const rect = card.getBoundingClientRect();
+      return {width: rect.width, height: rect.height};
+    });
+    if (previous) {
+      expect(shape.width, `${width}px: la carte ne rétrécit pas au seuil responsive`).toBeGreaterThanOrEqual(previous.width - 1);
+      expect(shape.height, `${width}px: agrandir l’écran n’aplatit pas la carte`).toBeGreaterThanOrEqual(previous.height - 1);
+    }
+    // Small screens may grow to fit their text and 44px controls. Once that
+    // minimum is no longer needed, the visible shape must remain proportional.
+    if (width >= 390) {
+      const ratio = shape.width / shape.height;
+      if (referenceRatio === undefined) referenceRatio = ratio;
+      expect(ratio, `${width}px: une carte horizontale conserve les proportions du mobile de référence`).toBeGreaterThan(2.2);
+      expect(ratio).toBeLessThan(2.5);
+      expect(Math.abs(ratio - referenceRatio), `${width}px: aucune déformation avec la largeur`).toBeLessThan(0.04);
+    }
+    previous = shape;
+  }
+});
+
+test('un nom long et une simulation de texte agrandi à 200 % restent consultables', async ({page}) => {
+  await page.emulateMedia({reducedMotion: 'reduce'});
+  const longMenuName = 'Le Menu Original généreux au poulet croustillant, sélection spéciale du chef';
+  const catalogue = products.map(product => product.id === 2 ? {
+    ...product,
+    name: longMenuName,
+    description: 'Burger poulet croustillant avec une grande portion de frites et une boisson au choix pour votre repas.',
+    summary: 'Burger poulet croustillant, frites et boisson au choix pour votre repas.',
+  } : product);
+  for (const width of [320, 390, 768, 1024]) {
+    await page.setViewportSize({width, height: 1000});
+    await openCatalogue(page, catalogue);
+    await page.locator('.product-card').evaluateAll(cards => {
+      for (const card of cards) {
+        const nodes = Array.from(card.querySelectorAll<HTMLElement>('.card-badge,.card-title,.card-text,.card-options li,.card-price,.card-choose'));
+        // Capture every computed size before changing inherited styles.
+        const originalSizes = nodes.map(node => parseFloat(getComputedStyle(node).fontSize));
+        nodes.forEach((node, index) => { node.style.fontSize = `${originalSizes[index] * 2}px`; });
+      }
+    });
+    const checks = await page.locator('.product-card').evaluateAll(cards => cards.map(card => {
+      const rect = card.getBoundingClientRect();
+      const body = card.querySelector<HTMLElement>('.card-body')!;
+      const contents = Array.from(body.children).map(node => node.getBoundingClientRect());
+      const action = card.querySelector('.card-add,.card-choose')!.getBoundingClientRect();
+      const title = card.querySelector<HTMLElement>('.card-title')!;
+      const titleStyle = getComputedStyle(title);
+      const range = document.createRange();
+      range.selectNodeContents(title.querySelector('button')!);
+      const textLines = Array.from(range.getClientRects());
+      return {
+        name: title.textContent,
+        actionDimensions: {width: action.width, height: action.height},
+        textContained: contents.every(node => node.left >= rect.left && node.right <= rect.right + 1 && node.top >= rect.top && node.bottom <= rect.bottom + 1),
+        bodyFits: body.scrollHeight <= body.clientHeight + 1,
+        // Outfit's ink can extend beyond its line box without being clipped.
+        // Check the actual text lines against the card that clips its content.
+        titleNotClipped: titleStyle.overflow === 'visible' && titleStyle.webkitLineClamp === 'none'
+          && textLines.length > 0 && textLines.every(line => line.left >= rect.left && line.right <= rect.right + 1 && line.top >= rect.top && line.bottom <= rect.bottom + 1),
+        actionAccessible: action.width >= 44 && action.height >= 44,
+        noOverflow: card.scrollWidth <= card.clientWidth,
+      };
+    }));
+    const failures = checks.filter(({name: _name, actionDimensions: _actionDimensions, ...flags}) => !Object.values(flags).every(Boolean));
+    expect(failures, `${width}px: texte 200 % contenu`).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await page.getByRole('button', {name: `Choisir ${longMenuName}`, exact: true}).click();
+  await expect(page.getByRole('dialog', {name: longMenuName, exact: true})).toBeVisible();
 });
 
 test('favori au clavier, choix du menu et ajout au panier fonctionnent après la refonte', async ({page}) => {

@@ -10,8 +10,8 @@ interface PromoCarouselProps {
 
 const slides = [
   {title: ['Le goût', 'STC.'], productId: 1, image: 'stc-hero-violet', brand: true},
-  {title: ['À', 'partager.'], productId: 3, image: 'stc-menu-3', brand: false},
-  {title: ['Menu', 'complet.'], productId: 2, image: 'stc-menu-2', brand: false},
+  {title: ['À', 'partager.'], productId: 3, image: 'stc-promo-tenders-violet', brand: false},
+  {title: ['Menu', 'complet.'], productId: 2, image: 'stc-promo-menu-violet', brand: false},
 ];
 
 export function PromoCarousel({products, onOrder}: PromoCarouselProps) {
@@ -22,7 +22,7 @@ export function PromoCarousel({products, onOrder}: PromoCarouselProps) {
   return (
     <section className="promo-banner" aria-roledescription="carrousel" aria-label="Nos promotions">
       <img
-        className={`promo-visual${slide.brand ? '' : ' promo-visual--meal'}`}
+        className={`promo-visual${slide.brand ? '' : ' promo-visual--background'}`}
         src={`/images/${slide.image}.jpg`}
         alt={product?.name || ''}
       />
