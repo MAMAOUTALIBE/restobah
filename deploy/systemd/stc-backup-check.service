@@ -1,0 +1,12 @@
+[Unit]
+Description=STC full backup freshness and checksum check
+ConditionPathExists=/opt/stc/scripts/backup.py
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+WorkingDirectory=/opt/stc
+UMask=0077
+TimeoutStartSec=30min
+ExecStart=/usr/bin/python3 /opt/stc/scripts/backup.py --project-name stc --check-freshness 26

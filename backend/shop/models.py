@@ -202,9 +202,29 @@ class Favorite(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=['user','product'],name='unique_favorite')]
 
+class OrderQuerySet(models.QuerySet):
+    def bulk_create(self, objs, batch_size=None, ignore_conflicts=False, update_conflicts=False, update_fields=None, unique_fields=None):
+        if update_conflicts and update_fields and 'payment_method' in update_fields:
+            raise ValidationError('Le mode de paiement d’une commande ne peut pas être modifié.')
+        return super().bulk_create(objs, batch_size=batch_size, ignore_conflicts=ignore_conflicts,
+                                   update_conflicts=update_conflicts, update_fields=update_fields, unique_fields=unique_fields)
+
+    def update(self, **kwargs):
+        if 'payment_method' in kwargs:
+            raise ValidationError('Le mode de paiement d’une commande ne peut pas être modifié.')
+        return super().update(**kwargs)
+
+    def bulk_update(self, objs, fields, **kwargs):
+        if 'payment_method' in fields:
+            raise ValidationError('Le mode de paiement d’une commande ne peut pas être modifié.')
+        return super().bulk_update(objs, fields, **kwargs)
+
+
 class Order(models.Model):
     STATUS = [('pending_payment','En attente de paiement'),('confirmed','Confirmée'),('preparing','En cuisine'),('ready','Prête'),('completed','Terminée'),('cancelled','Annulée')]
-    PAYMENT = [('simulated','Simulé'),('pending','En attente'),('paid','Payé'),('failed','Échoué'),('cancelled','Annulé'),('refunded','Remboursé')]
+    PAYMENT = [('simulated','Simulé'),('pending','En attente'),('due','À régler sur place'),('paid','Payé'),('failed','Échoué'),('cancelled','Annulé'),('refunded','Remboursé')]
+    PAYMENT_METHODS = [('simulation','Simulation'),('stripe','Stripe test'),('on_site','Sur place')]
+    objects = OrderQuerySet.as_manager()
     id = models.CharField(primary_key=True,max_length=20,default=order_reference,editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL,null=True,blank=True,on_delete=models.SET_NULL)
     access_token = models.CharField(max_length=80,default=guest_token,unique=True,editable=False)
@@ -215,6 +235,7 @@ class Order(models.Model):
     mode = models.CharField(max_length=20,choices=[('À emporter','À emporter'),('Livraison','Livraison')])
     status = models.CharField(max_length=20,choices=STATUS,default='confirmed')
     payment_status = models.CharField(max_length=20,choices=PAYMENT,default='simulated')
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='simulation', db_default='simulation', editable=False)
     demo_mode = models.BooleanField(default=True)
     subtotal = models.DecimalField(max_digits=9,decimal_places=2)
     delivery_fee = models.DecimalField(max_digits=6,decimal_places=2,default=0)
@@ -222,6 +243,7 @@ class Order(models.Model):
     customer = models.JSONField()
     class Meta:
         ordering = ['-date']
+        permissions = [('record_onsite_payment', 'Peut enregistrer les règlements et remboursements sur place')]
         constraints = [models.UniqueConstraint(fields=['scope','idempotency_key'],name='unique_order_idempotency')]
     TRANSITIONS = {'pending_payment': {'cancelled'}, 'confirmed': {'preparing','cancelled'}, 'preparing': {'ready','cancelled'}, 'ready': {'completed','cancelled'}, 'completed':set(),'cancelled':set()}
     def check_transition(self, status):
@@ -229,10 +251,30 @@ class Order(models.Model):
             return
         if status not in self.TRANSITIONS.get(self.status,set()):
             raise ValidationError('Ce changement de statut n’est pas autorisé.')
-        if status in {'preparing','ready','completed'} and self.payment_status not in {'paid','simulated'}:
+        permitted_unpaid = self.payment_method == 'on_site' and self.payment_status == 'due' and status in {'preparing','ready'}
+        if status in {'preparing','ready','completed'} and self.payment_status not in {'paid','simulated'} and not permitted_unpaid:
+            if self.payment_method == 'on_site':
+                raise ValidationError('Enregistrez l’encaissement avant de terminer cette commande.')
             raise ValidationError('Le paiement doit être confirmé avant la préparation.')
         if status == 'cancelled' and self.payment_status == 'paid':
+            if self.payment_method == 'on_site':
+                raise ValidationError('Enregistrez le remboursement avant d’annuler cette commande.')
             raise ValidationError('Remboursez d’abord le paiement dans Stripe et attendez le webhook avant d’annuler.')
+    def save(self, *args, **kwargs):
+        original = type(self).objects.using(kwargs.get('using') or self._state.db).filter(pk=self.pk).values_list('payment_method', flat=True).first() if self.pk else None
+        if original is not None and original != self.payment_method:
+            raise ValidationError('Le mode de paiement d’une commande ne peut pas être modifié.')
+        return super().save(*args, **kwargs)
+    @property
+    def payment_label(self):
+        if self.payment_method == 'on_site':
+            if self.payment_status == 'due':
+                return 'À régler à la livraison' if self.mode == 'Livraison' else 'À régler au restaurant'
+            if self.payment_status == 'paid':
+                return 'Réglé sur place'
+            if self.payment_status == 'refunded':
+                return 'Remboursé sur place'
+        return 'Paiement simulé' if self.payment_status == 'simulated' else f'Paiement : {self.get_payment_status_display().lower()}'
     @property
     def refund_required(self):
         # A payment confirmed after cancellation (session completed during the cancel race).
@@ -243,7 +285,7 @@ class Order(models.Model):
         if self.status == status:
             return
         self.status = status
-        if status == 'cancelled' and self.payment_status in {'pending','failed'}:
+        if status == 'cancelled' and self.payment_status in {'pending','failed','due'}:
             self.payment_status = 'cancelled'
         self.save(update_fields=['status','payment_status'])
         OrderHistory.objects.create(order=self,status=status)
@@ -272,6 +314,47 @@ class Payment(models.Model):
     payment_intent = models.CharField(max_length=255,blank=True)
     checkout_url = models.URLField(max_length=2000,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class OnSitePaymentEventQuerySet(models.QuerySet):
+    def bulk_create(self, objs, batch_size=None, ignore_conflicts=False, update_conflicts=False, update_fields=None, unique_fields=None):
+        if update_conflicts:
+            raise ValidationError('Un événement de règlement ne peut pas être modifié.')
+        return super().bulk_create(objs, batch_size=batch_size, ignore_conflicts=ignore_conflicts,
+                                   update_conflicts=False, update_fields=update_fields, unique_fields=unique_fields)
+
+    def update(self, **kwargs):
+        raise ValidationError('Un événement de règlement ne peut pas être modifié.')
+
+    def delete(self):
+        raise ValidationError('Un événement de règlement ne peut pas être supprimé.')
+
+
+class OnSitePaymentEvent(models.Model):
+    KINDS = [('collected', 'Encaissement enregistré'), ('refunded', 'Remboursement enregistré')]
+    objects = OnSitePaymentEventQuerySet.as_manager()
+    order = models.ForeignKey(Order, related_name='onsite_events', on_delete=models.PROTECT)
+    kind = models.CharField(max_length=20, choices=KINDS)
+    amount = models.DecimalField(max_digits=9, decimal_places=2, validators=[MinValueValidator(0)])
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='onsite_payment_events', on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at', 'id']
+        constraints = [models.UniqueConstraint(fields=['order', 'kind'], name='unique_onsite_payment_kind'),
+                       models.CheckConstraint(condition=models.Q(amount__gte=0), name='onsite_payment_nonnegative')]
+
+    def save(self, *args, **kwargs):
+        existing = self.pk is not None and type(self).objects.using(kwargs.get('using') or self._state.db).filter(pk=self.pk).exists()
+        if not self._state.adding or existing or kwargs.get('force_update') or kwargs.get('update_fields') is not None:
+            raise ValidationError('Un événement de règlement ne peut pas être modifié.')
+        # Never let Django's normal UPDATE-then-INSERT fallback rewrite a row,
+        # including if another insert claims an explicitly supplied PK after the check.
+        kwargs['force_insert'] = True
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Un événement de règlement ne peut pas être supprimé.')
 
 class StripeEvent(models.Model):
     id = models.CharField(primary_key=True,max_length=255)

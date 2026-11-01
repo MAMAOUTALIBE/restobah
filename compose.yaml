@@ -28,9 +28,13 @@ services:
       STC_DEMO_MODE: '1'
       STC_PAYMENT_MODE: simulation
       STC_RUNTIME_DIR: /app/.runtime
+      STC_EMAIL_FILE_PATH: /app/.private-emails
       STC_TRUST_PROXY: '1'
     volumes:
       - stc-media:/app/media
+      # Backend-only private volumes; never mounted by the public frontend.
+      - stc-runtime:/app/.runtime
+      - stc-emails:/app/.private-emails
     depends_on:
       db:
         condition: service_healthy
@@ -56,3 +60,5 @@ services:
 volumes:
   stc-db:
   stc-media:
+  stc-runtime:
+  stc-emails:

@@ -5,7 +5,7 @@ from django.contrib.auth.forms import UserCreationForm,UserChangeForm
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.html import format_html_join
-from .models import User,Restaurant,OpeningHour,Closure,Category,OptionGroup,Choice,Product,Address,Favorite,Order,OrderLine,OrderHistory,Payment,StripeEvent
+from .models import User,Restaurant,OpeningHour,Closure,Category,OptionGroup,Choice,Product,Address,Favorite,Order,OrderLine,OrderHistory,Payment,StripeEvent,OnSitePaymentEvent
 
 class STCUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
@@ -77,6 +77,18 @@ class HistoryInline(admin.TabularInline):
     def has_add_permission(self,request,obj=None):
         return False
 
+class OnSitePaymentInline(admin.TabularInline):
+    model=OnSitePaymentEvent
+    fields=['kind','amount','actor','created_at']
+    readonly_fields=fields
+    extra=0
+    can_delete=False
+    def has_add_permission(self,request,obj=None):
+        return False
+    def has_change_permission(self,request,obj=None):
+        return False
+
+
 class OrderForm(forms.ModelForm):
     class Meta:
         model=Order
@@ -106,9 +118,9 @@ class OrderAdmin(admin.ModelAdmin):
     search_fields=['id','customer__name','customer__email','customer__phone']
     search_help_text='Référence, nom, e-mail ou téléphone du client.'
     date_hierarchy='date'
-    readonly_fields=['id','date','user','mode','customer_details','subtotal','delivery_fee','total','payment_status','refund','demo_mode']
+    readonly_fields=['id','date','user','mode','customer_details','subtotal','delivery_fee','total','payment_method','payment_status','refund','demo_mode']
     fields=readonly_fields+['status']
-    inlines=[OrderLineInline,HistoryInline]
+    inlines=[OrderLineInline,HistoryInline,OnSitePaymentInline]
     actions=['prepare','ready','complete']
     class Media:
         js=['shop/admin-orders.js']
@@ -162,6 +174,18 @@ class PaymentAdmin(admin.ModelAdmin):
     list_display=['order','session_id','created_at']
     readonly_fields=['order','session_id','payment_intent','checkout_url','created_at']
     def has_add_permission(self,request):
+        return False
+    def has_delete_permission(self,request,obj=None):
+        return False
+
+
+@admin.register(OnSitePaymentEvent)
+class OnSitePaymentEventAdmin(admin.ModelAdmin):
+    list_display=['order','kind','amount','actor','created_at']
+    readonly_fields=['order','kind','amount','actor','created_at']
+    def has_add_permission(self,request):
+        return False
+    def has_change_permission(self,request,obj=None):
         return False
     def has_delete_permission(self,request,obj=None):
         return False

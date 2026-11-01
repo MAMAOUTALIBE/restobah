@@ -32,6 +32,8 @@ def checkout_expiry(now=None):
 
 def release_checkout(order):
     """Close the order's Stripe session so that it can no longer be paid, before a cancellation."""
+    if order.payment_method != 'stripe':
+        return
     payment = Payment.objects.filter(order=order).exclude(session_id__isnull=True).exclude(session_id='').first()
     if not payment:
         return
@@ -54,11 +56,13 @@ def release_checkout(order):
 
 class PaymentView(ProtectedView):
     def post(self,request,pk):
-        if settings.PAYMENT_MODE != 'stripe' or not settings.STRIPE_SECRET_KEY:
+        if not settings.STRIPE_SECRET_KEY:
             return Response({'detail':'Le paiement Stripe de test n’est pas configuré.'},status=503)
         token = request.data.get('token','') if isinstance(request.data,dict) else ''
         with transaction.atomic():
             order = authorized_order(request,pk,token=token,lock=True)
+            if order.payment_method != 'stripe':
+                raise ValidationError('Cette commande ne prévoit pas de paiement Stripe.')
             if order.status != 'pending_payment' or order.payment_status not in {'pending','failed'}:
                 raise ValidationError('Cette commande ne peut pas être payée dans son état actuel.')
             payment,_ = Payment.objects.get_or_create(order=order)
@@ -89,7 +93,7 @@ def handle_session(event_type,obj):
     order_id = (obj.get('metadata') or {}).get('order_id')
     order = Order.objects.select_for_update().filter(pk=order_id).first() if order_id else None
     payment = Payment.objects.select_for_update().filter(order_id=order_id,session_id=obj.get('id')).first() if order else None
-    if not order or not payment:
+    if not order or order.payment_method != 'stripe' or not payment:
         logger.warning('Événement Stripe %s ignoré : session %s inconnue.',event_type,obj.get('id'))
         return
     if event_type in PAID_EVENTS and obj.get('payment_status') == 'paid':
@@ -127,7 +131,7 @@ def handle_refund(obj):
     order_id = payment.order_id if payment else (obj.get('metadata') or {}).get('order_id')
     order = Order.objects.select_for_update().filter(pk=order_id).first() if order_id else None
     payment = Payment.objects.select_for_update().filter(order=order).first() if order else None
-    if not (order and payment and intent_id and (not payment.payment_intent or payment.payment_intent == intent_id)):
+    if not (order and order.payment_method == 'stripe' and payment and intent_id and (not payment.payment_intent or payment.payment_intent == intent_id)):
         logger.warning('Remboursement Stripe %s ignoré : paiement inconnu.',intent_id)
         return
     if order.payment_status not in {'pending','failed','paid','cancelled'} or obj.get('amount_refunded') != cents(order.total) or obj.get('currency') != 'eur':

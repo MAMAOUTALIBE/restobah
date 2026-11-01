@@ -25,7 +25,17 @@ MIDDLEWARE = ['django.middleware.security.SecurityMiddleware', 'whitenoise.middl
 ROOT_URLCONF = 'config.urls'
 WSGI_APPLICATION = 'config.wsgi.application'
 TEMPLATES = [{'BACKEND': 'django.template.backends.django.DjangoTemplates', 'DIRS': [], 'APP_DIRS': True, 'OPTIONS': {'context_processors': ['django.template.context_processors.request', 'django.contrib.auth.context_processors.auth', 'django.contrib.messages.context_processors.messages']}}]
-DATABASES = {'default': dj_database_url.config(default=f'sqlite:///{BASE_DIR / "db.sqlite3"}', conn_max_age=60)}
+# runserver creates request threads: persistent connections accumulate during E2E.
+# WSGI production may reuse a bounded connection; development and tests always close it.
+try:
+    DB_CONN_MAX_AGE = int(os.getenv('DJANGO_DB_CONN_MAX_AGE', '60'))
+except ValueError as error:
+    raise RuntimeError('DJANGO_DB_CONN_MAX_AGE doit être un entier positif ou nul.') from error
+if not 0 <= DB_CONN_MAX_AGE <= 3600:
+    raise RuntimeError('DJANGO_DB_CONN_MAX_AGE doit être compris entre 0 et 3600 secondes.')
+if DEBUG or sys.argv[1:2] == ['test']:
+    DB_CONN_MAX_AGE = 0
+DATABASES = {'default': dj_database_url.config(default=f'sqlite:///{BASE_DIR / "db.sqlite3"}', conn_max_age=DB_CONN_MAX_AGE)}
 if DATABASES['default']['ENGINE'] == 'django.db.backends.sqlite3':
     DATABASES['default']['OPTIONS'] = {'transaction_mode': 'IMMEDIATE', 'timeout': 20}
 # PostgreSQL deployments share rate-limit counters between gunicorn workers (table created by migration 0005).
@@ -74,6 +84,14 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'STC <bonjour@stc.example>'
 EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
 # Team addresses alerted of each confirmed order (comma separated); empty disables the alert.
 ORDER_NOTIFICATION_EMAILS = [address.strip() for address in os.getenv('STC_ORDER_NOTIFICATION_EMAIL', '').split(',') if address.strip()]
+# Public, optional client information. Only this allow-list is exposed by restaurant_data.
+STC_CONTACT_PHONE = os.getenv('STC_CONTACT_PHONE', '').strip()
+STC_CONTACT_EMAIL = os.getenv('STC_CONTACT_EMAIL', '').strip()
+STC_LEGAL_NOTICE_URL = os.getenv('STC_LEGAL_NOTICE_URL', '').strip()
+STC_PRIVACY_URL = os.getenv('STC_PRIVACY_URL', '').strip()
+STC_TERMS_URL = os.getenv('STC_TERMS_URL', '').strip()
+# A responsible person sets this after checking the client's actual content.
+STC_CONTENT_APPROVED = os.getenv('STC_CONTENT_APPROVED', '0') == '1'
 # Stripe orders left unpaid longer than this are cancelled (cancel_stale_orders, payment resumption).
 PENDING_PAYMENT_MINUTES = int(os.getenv('STC_PENDING_PAYMENT_MINUTES', '45'))
 PASSWORD_RESET_TIMEOUT = 3600
@@ -85,8 +103,8 @@ if STRIPE_SECRET_KEY and not STRIPE_SECRET_KEY.startswith('sk_test_'):
 LOGGING = {'version': 1, 'disable_existing_loggers': False, 'handlers': {'console': {'class': 'logging.StreamHandler'}}, 'loggers': {'django.request': {'handlers': ['console'], 'level': 'ERROR', 'propagate': False}, 'shop': {'handlers': ['console'], 'level': 'INFO', 'propagate': False}}}
 
 PAYMENT_MODE = os.getenv('STC_PAYMENT_MODE', 'simulation')
-if PAYMENT_MODE not in {'simulation', 'stripe'}:
-    raise RuntimeError('STC_PAYMENT_MODE doit être simulation ou stripe.')
+if PAYMENT_MODE not in {'simulation', 'stripe', 'on_site'}:
+    raise RuntimeError('STC_PAYMENT_MODE doit être simulation, stripe ou on_site.')
 if PAYMENT_MODE == 'stripe' and (not STRIPE_SECRET_KEY or not STRIPE_WEBHOOK_SECRET):
     raise RuntimeError('Les clés Stripe test et webhook sont obligatoires en mode stripe.')
 if not DEBUG and not DEMO_MODE and PAYMENT_MODE == 'simulation':

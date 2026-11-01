@@ -96,6 +96,8 @@ Site de revue : http://127.0.0.1:8080 (adresse distincte pour séparer les cooki
 
 ## Configuration et exploitation
 
+La [procédure de sauvegarde complète](docs/BACKUPS.md) couvre les données, photos et fichiers privés. Le précontrôle de mise en service utilise ponctuellement un conteneur supprimé après exécution, sans port, avec sauvegardes montées en lecture seule ; aucun dossier de sauvegarde n’est monté dans le service web public.
+
 - `.env.example` : configuration locale ; `.env.production.example` : paramètres à renseigner pour le déploiement.
 - [Exploitation et déploiement](docs/OPERATIONS.md).
 - [Contrat de l’API](API_CONTRACT.md).

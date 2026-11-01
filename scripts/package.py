@@ -5,24 +5,26 @@ import hashlib
 import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
-FILES = ['README.md','API_CONTRACT.md','package.json','package-lock.json','index.html','tsconfig.json','vite.config.ts','eslint.config.js','playwright.config.ts','.gitignore','.dockerignore','.env.example','.env.production.example','compose.yaml','compose.production.yaml']
+FILES = ['README.md','API_CONTRACT.md','package.json','package-lock.json','index.html','tsconfig.json','vite.config.ts','eslint.config.js','playwright.config.ts','.gitignore','.dockerignore','.env.example','.env.production.example','compose.yaml','compose.production.yaml','compose.vps.yaml']
 DIRECTORIES = ['src','public','backend','scripts','deploy','docs','tests','.github','dist']
-EXCLUDED_PARTS = {'.venv','__pycache__','.private-emails','private_emails','media','staticfiles','.runtime'}
+EXCLUDED_PARTS = {'.venv','__pycache__','.private-emails','private_emails','media','staticfiles','.runtime','tls','backups'}
 EXCLUDED_NAMES = {'.env','.dev-secret','db.sqlite3','db.sqlite3-shm','db.sqlite3-wal'}
 
 def included(path):
-    return not any(part in EXCLUDED_PARTS for part in path.relative_to(ROOT).parts) and path.name not in EXCLUDED_NAMES and not path.name.startswith('db.sqlite3') and not (path.name.startswith('.env') and path.name not in {'.env.example','.env.production.example'}) and path.suffix not in {'.pyc','.pyo','.log'}
+    # An innocent-looking symlink must never pull private data into a delivery.
+    return not path.is_symlink() and path.resolve().is_relative_to(ROOT.resolve()) and not any(part in EXCLUDED_PARTS for part in path.relative_to(ROOT).parts) and path.name not in EXCLUDED_NAMES and not path.name.startswith('db.sqlite3') and not (path.name.startswith('.env') and path.name not in {'.env.example','.env.production.example'}) and path.suffix not in {'.pyc','.pyo','.log','.pem','.key','.p12','.pfx','.dump','.sqlite3'}
 
 def main():
     directory = ROOT/'artifacts'
     directory.mkdir(exist_ok=True)
     output = directory/'STC-livraison.zip'
-    paths = {ROOT/name for name in FILES if (ROOT/name).is_file()}
+    paths = {ROOT/name for name in FILES if (ROOT/name).is_file() and included(ROOT/name)}
     for name in DIRECTORIES:
         paths.update(path for path in (ROOT/name).rglob('*') if path.is_file() and included(path))
-    for name in ['audit-mobile-1-accueil.png','audit-mobile-5-suivi.png','audit-tablet-1-accueil.png','audit-desktop-1-accueil.png','audit-mobile-6-compte-erreur.png']:
+    for name in ['audit-mobile-1-accueil.png','audit-mobile-5-suivi.png','audit-tablet-1-accueil.png','audit-desktop-1-accueil.png','audit-mobile-6-compte-erreur.png',
+                 'crm-carte-1280.png','crm-carte-390.png','crm-commandes-390.png','crm-restaurant-320.png']:
         path = ROOT/'screenshots'/name
-        if path.is_file():
+        if path.is_file() and included(path):
             paths.add(path)
     with zipfile.ZipFile(output,'w',compression=zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(paths):

@@ -36,6 +36,12 @@ def wait(url, seconds=60):
     raise SystemExit(f'Le service {url} ne répond pas.')
 
 def main():
+    payment_mode = os.getenv('STC_E2E_PAYMENT_MODE', 'simulation')
+    demo_mode = os.getenv('STC_E2E_DEMO_MODE', '1')
+    if payment_mode not in {'simulation', 'on_site'} or demo_mode not in {'0', '1'}:
+        sys.exit('Recette : STC_E2E_PAYMENT_MODE doit être simulation/on_site et STC_E2E_DEMO_MODE doit être 0/1.')
+    if payment_mode == 'simulation' and demo_mode != '1':
+        sys.exit('La simulation est réservée au mode démonstration, même sur la base jetable.')
     python = ROOT / 'backend/.venv/bin/python'
     if not python.exists():
         sys.exit('Exécutez python3 scripts/setup.py avant les tests.')
@@ -50,8 +56,8 @@ def main():
             # CI may point STC_E2E_DATABASE_URL to a disposable PostgreSQL database.
             'DATABASE_URL': os.getenv('STC_E2E_DATABASE_URL', f'sqlite:///{base / "e2e.sqlite3"}'),
             'DJANGO_DEBUG': '1',
-            'STC_DEMO_MODE': '1',
-            'STC_PAYMENT_MODE': 'simulation',
+            'STC_DEMO_MODE': demo_mode,
+            'STC_PAYMENT_MODE': payment_mode,
             'STRIPE_SECRET_KEY': '',
             'STRIPE_WEBHOOK_SECRET': '',
             'EMAIL_BACKEND': 'shop.email_backend.PrivateFileEmailBackend',

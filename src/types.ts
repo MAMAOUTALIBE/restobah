@@ -15,16 +15,18 @@ export interface CartItem {
   // Only used when migrating the first demonstration's stored basket.
   option?:string; extras?:string[];
 }
+export type PaymentMethod='simulation'|'stripe'|'on_site';
 export interface RestaurantSettings {
   name:string;address:string;city:string;hours:string;days:string;
+  contactPhone?:string;contactEmail?:string;legalNoticeUrl?:string;privacyUrl?:string;termsUrl?:string;
   deliveryFee:number;minDeliveryTotal:number;deliveryPostalCodes:string[];
-  orderingEnabled:boolean;isOpen:boolean;demoMode:boolean;paymentMode:'simulation'|'stripe';pickupEnabled?:boolean;deliveryEnabled?:boolean;pickupDelay?:string;deliveryDelay?:string;
+  orderingEnabled:boolean;isOpen:boolean;demoMode:boolean;paymentMode:PaymentMethod;pickupEnabled?:boolean;deliveryEnabled?:boolean;pickupDelay?:string;deliveryDelay?:string;
 }
 export type OrderStatus='pending_payment'|'confirmed'|'preparing'|'ready'|'completed'|'cancelled';
-export type PaymentStatus='simulated'|'pending'|'paid'|'failed'|'cancelled'|'refunded';
+export type PaymentStatus='simulated'|'pending'|'due'|'paid'|'failed'|'cancelled'|'refunded';
 export interface Order {
   id:string;date:string;total:number;subtotal:number;deliveryFee:number;mode:string;
-  items:string[];status:OrderStatus;paymentStatus:PaymentStatus;accessToken?:string;demoMode:boolean;
+  items:string[];status:OrderStatus;paymentMethod:PaymentMethod;paymentStatus:PaymentStatus;accessToken?:string;demoMode:boolean;
   lines:{name:string;quantity:number;unitPrice:number;total:number;choices:string[]}[];
   history:{status:OrderStatus;date:string}[];
   customer?:Customer;
@@ -35,7 +37,7 @@ export interface Customer {name:string;email:string;phone:string;address?:string
 export interface Address {id:number;label:string;name:string;phone:string;address:string;postal:string;city:string}
 export interface OrderPayload {
   mode:'À emporter'|'Livraison';items:{productId:number;quantity:number;choices:string[]}[];
-  customer:Customer;paymentMethod:'simulation'|'stripe';
+  customer:Customer;paymentMethod:PaymentMethod;
 }
 export const euro=(n:number)=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR'}).format(n);
 export const cents=(n:number)=>Math.round(n*100);

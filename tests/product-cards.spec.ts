@@ -90,7 +90,7 @@ test('sur mobile chaque carte occupe sa ligne, avec photo, prix et action access
 
 test('le gabarit mobile reste identique en filtrant menus, burgers, poulet ou accompagnements', async ({page}) => {
   await openCatalogue(page);
-  for (const width of [360, 364, 365, 375, 387, 388, 390]) {
+  for (const width of [320, 360, 364, 365, 375, 387, 388, 390, 395, 396, 400, 430, 760]) {
     await page.setViewportSize({width, height: 1000});
     const heights: number[] = [];
     const titleOffsets: number[] = [];

@@ -16,7 +16,7 @@ async function requestKey(payload:OrderPayload){
   try{const saved=JSON.parse(sessionStorage.getItem('stc-checkout-key')||'null') as {fingerprint?:string;key?:string}|null;if(saved?.fingerprint===fingerprint&&typeof saved.key==='string')return saved.key;}catch{/* create a new key */}
   const key=crypto.randomUUID();try{sessionStorage.setItem('stc-checkout-key',JSON.stringify({fingerprint,key}));}catch{/* key retained in mounted form */}return key;
 }
-export function Cart({cart,settings,user,onClose,onRegistered,onComplete}:{cart:CartState;settings:RestaurantSettings|null;user:User|null;onClose:()=>void;onRegistered:(o:Order)=>void;onComplete:(o:Order)=>void}){
+export function Cart({cart,settings,refreshSettings,user,onClose,onRegistered,onComplete}:{cart:CartState;settings:RestaurantSettings|null;refreshSettings:()=>Promise<RestaurantSettings>;user:User|null;onClose:()=>void;onRegistered:(o:Order)=>void;onComplete:(o:Order)=>void}){
   const [mode,setMode]=useState<'À emporter'|'Livraison'>(settings?.pickupEnabled===false&&settings.deliveryEnabled!==false?'Livraison':'À emporter');
   const [checkout,setCheckout]=useState(false);
   const [busy,setBusy]=useState(false);
@@ -27,11 +27,12 @@ export function Cart({cart,settings,user,onClose,onRegistered,onComplete}:{cart:
   const [pendingOrder,setPendingOrder]=useState<Order|null>(null);
   const submission=useRef(false);
   const keyCache=useRef<{payload:string;key:string}|null>(null);
-  const [latestSettings,setLatestSettings]=useState<RestaurantSettings|null>(null);
-  const actualSettings=latestSettings||settings;
+  const actualSettings=settings;
   const delivery=mode==='Livraison'?(actualSettings?.deliveryFee??0):0;
   const total=money(cart.total+delivery);
   const enabled=!!actualSettings&&actualSettings.orderingEnabled&&actualSettings.isOpen;
+  const paymentMode=pendingOrder?'stripe':actualSettings?.paymentMode;
+  const paymentPlace=mode==='Livraison'?'à la livraison':'au restaurant';
   useEffect(()=>{let alive=true;if(!user)return;restaurantApi.getAddresses().then(data=>{if(alive)setAddresses(data);}).catch(err=>{if(alive)setAddressesError(messageOf(err));});return()=>{alive=false;};},[user?.id]);
   function field(name:keyof Customer,value:string){setCustomer(old=>({...old,[name]:value}));setError('');}
   async function pay(order:Order){
@@ -62,11 +63,11 @@ export function Cart({cart,settings,user,onClose,onRegistered,onComplete}:{cart:
     submission.current=true;setBusy(true);setError('');
     try{
       if(pendingOrder){await pay(pendingOrder);return;}
-      const [freshProducts,freshSettings]=await Promise.all([restaurantApi.getProducts(),restaurantApi.getRestaurant()]);
-      setLatestSettings(freshSettings);
+      const [freshProducts,freshSettings]=await Promise.all([restaurantApi.getProducts(),refreshSettings()]);
       const checked=cart.items.map(item=>checkedItem(item,freshProducts));
       if(checked.some((item,index)=>item.issue||item.unitPrice!==cart.items[index].unitPrice)||freshSettings.deliveryFee!==actualSettings?.deliveryFee){cart.reconcile(freshProducts);setError('La carte ou les tarifs ont changé. Vérifiez votre panier avant de confirmer à nouveau.');return;}
       if(!freshSettings.orderingEnabled||!freshSettings.isOpen){setError('Le restaurant ne prend pas de commandes pour le moment. Votre panier est conservé.');return;}
+      if(freshSettings.paymentMode!==actualSettings?.paymentMode||freshSettings.demoMode!==actualSettings?.demoMode){setError('Le mode de paiement a changé. Vérifiez les informations de règlement avant de confirmer à nouveau.');return;}
       const payload:OrderPayload={mode,items:checked.map(i=>({productId:i.product.id,quantity:i.quantity,choices:i.choices})),customer:{name:customer.name.trim(),email:customer.email.trim(),phone:customer.phone.trim(),note:customer.note?.trim(),...(mode==='Livraison'?{address:customer.address?.trim(),postal:customer.postal?.trim(),city:customer.city?.trim()}:{})},paymentMethod:freshSettings.paymentMode};
       const serialized=JSON.stringify(payload);
       const key=keyCache.current?.payload===serialized?keyCache.current.key:await requestKey(payload);
@@ -101,9 +102,9 @@ export function Cart({cart,settings,user,onClose,onRegistered,onComplete}:{cart:
           <label>Une précision ?<textarea name="note" maxLength={1000} placeholder="Instructions pour votre commande (facultatif)" value={customer.note} onChange={e=>field('note',e.target.value)}/></label>
         </fieldset>
         {error&&<p className="error" role="alert">{error}</p>}
-        <button disabled={busy||!enabled||cart.hasIssues} className="primary full" type="submit">{actualSettings?.paymentMode==='stripe'&&<CreditCard size={16}/>} {busy?'Validation en cours…':pendingOrder?'Réessayer le paiement test':actualSettings?.paymentMode==='stripe'?'Continuer vers le paiement test':'Valider la commande de démonstration'}</button>
+        <button disabled={busy||!enabled||cart.hasIssues} className="primary full" type="submit">{paymentMode==='stripe'&&<CreditCard size={16}/>} {busy?'Validation en cours…':pendingOrder?'Réessayer le paiement test':paymentMode==='stripe'?'Continuer vers le paiement test':paymentMode==='on_site'?`Commander et régler ${paymentPlace}`:'Valider la commande de démonstration'}</button>
       </form>}
-      <p className="simulation"><ShieldCheck size={16}/>{actualSettings?.paymentMode==='stripe'?'Stripe en mode test · Aucun paiement réel.':'Paiement simulé · Aucun prélèvement ne sera effectué.'}</p>
+      <p className="simulation"><ShieldCheck size={16}/>{paymentMode==='on_site'?`Le total de ${euro(total)} sera à régler ${paymentPlace}. Aucun paiement en ligne.`:paymentMode==='stripe'?'Stripe en mode test · Aucun paiement réel.':'Paiement simulé · Aucun prélèvement ne sera effectué.'}</p>
       {actualSettings?.demoMode&&<p className="field-help centered">La commande sera enregistrée pour démonstration. Aucun repas ne sera préparé.</p>}
     </>}
   </div></Modal>;

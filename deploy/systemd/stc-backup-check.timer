@@ -1,0 +1,11 @@
+[Unit]
+Description=STC hourly backup freshness check
+
+[Timer]
+OnBootSec=5min
+OnCalendar=hourly
+Persistent=true
+Unit=stc-backup-check.service
+
+[Install]
+WantedBy=timers.target

@@ -7,6 +7,10 @@ import {restaurant} from '../data/restaurant';
 import './Footer.css';
 
 type Info='questions'|'allergenes'|'confidentialite';
+function documentUrl(value?:string){
+  if(!value||/\s/.test(value)||Array.from(value).some(c=>c.charCodeAt(0)<32))return '';
+  try{const url=new URL(value);return url.protocol==='https:'&&!url.username&&!url.password&&(!url.port||url.port==='443')?url.href:'';}catch{return '';}
+}
 const shared={
   order:{question:'Comment passer commande ?',answer:'Choisissez un plat, personnalisez-le, puis ajoutez-le au panier. Vous pouvez choisir le retrait au restaurant ou la livraison avant de valider vos coordonnées.'},
   veggie:{question:'Des options végétariennes ?',answer:'Ouvrez les filtres de la carte et cochez « Végétarien » pour retrouver les recettes concernées.'},
@@ -32,6 +36,7 @@ function information(demo:boolean,settings:RestaurantSettings|null):Record<Info,
 }:{
   questions:{title:'Une question ? On vous répond.',content:[shared.order,
     {question:'Quels sont les délais ?',answer:`${delays}, selon l’affluence.`},
+    ...(settings?.paymentMode==='on_site'?[{question:'Quand régler ma commande ?',answer:'Votre commande vous engage à régler le total affiché. Le règlement se fait au restaurant pour un retrait, ou à la livraison. Aucun paiement en ligne n’est demandé.'}]:[]),
     {question:'Comment suivre ma commande ?',answer:'Le statut est mis à jour par l’équipe du restaurant dans « Commandes ». L’e-mail de confirmation contient aussi un lien de suivi personnel.'},
   ]},
   allergenes:{title:'Allergènes & préférences',content:[
@@ -46,6 +51,9 @@ export function Footer({onNavigate,settings}:{onNavigate:(view:View)=>void;setti
   const close=useCallback(()=>setInfo(null),[]);
   const demo=settings?.demoMode!==false;
   const details=information(demo,settings);
+  const phone=settings?.contactPhone&&/^\+?[0-9 () .-]{8,40}$/.test(settings.contactPhone)&&settings.contactPhone.replace(/\D/g,'').length>=8&&settings.contactPhone.replace(/\D/g,'').length<=15?settings.contactPhone:'';
+  const email=settings?.contactEmail&&/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(settings.contactEmail)?settings.contactEmail:'';
+  const documents=[{label:'Mentions légales',url:documentUrl(settings?.legalNoticeUrl)},{label:'Politique de confidentialité',url:documentUrl(settings?.privacyUrl)},{label:'Conditions de commande',url:documentUrl(settings?.termsUrl)}].filter(item=>item.url);
   return <>
     <footer className="site-footer" aria-label="Informations STC">
       <div className="footer-shell">
@@ -54,10 +62,10 @@ export function Footer({onNavigate,settings}:{onNavigate:(view:View)=>void;setti
           <button className="footer-order" onClick={()=>onNavigate('Carte')}>Découvrir la carte <ArrowRight size={17}/></button>
         </div>
         <div className="footer-columns">
-          <div className="footer-identity"><button className="footer-wordmark" aria-label="STC — Revenir à l’accueil" onClick={()=>onNavigate('Accueil')}>{settings?.name||restaurant.name}<span>®</span></button><p>{restaurant.tagline}</p><div className="footer-service-tags"><span><ShoppingBag size={13}/> À emporter</span><span><Truck size={14}/> Livraison</span></div></div>
+          <div className="footer-identity"><button className="footer-wordmark" aria-label="STC — Revenir à l’accueil" onClick={()=>onNavigate('Accueil')}>{settings?.name||restaurant.name}</button><p>{restaurant.tagline}</p><div className="footer-service-tags">{settings?.pickupEnabled!==false&&<span><ShoppingBag size={13}/> À emporter</span>}{settings?.deliveryEnabled!==false&&<span><Truck size={14}/> Livraison</span>}</div></div>
           <div className="footer-location"><h3><MapPin size={15}/> La bonne adresse</h3><address>{settings?<>{settings.address}{' · '}<br/>{settings.city}</>:'…'}</address>{demo&&<span className="footer-demo-address">Adresse de démonstration</span>}</div>
           <div className="footer-hours"><h3><Clock size={15}/> À l’heure des envies</h3><p>{settings?.days||'…'}</p><strong>{settings?.hours||''}</strong>{demo&&<span className="footer-demo-address">Horaires indicatifs</span>}</div>
-          <nav className="footer-links" aria-label="Liens utiles"><h3>Un petit raccourci</h3><button onClick={()=>onNavigate('Favoris')}>Mes favoris <Heart size={13}/></button><button onClick={()=>onNavigate('Commandes')}>Mes commandes <ArrowRight size={13}/></button><button onClick={()=>setInfo('questions')}>Questions fréquentes <ArrowRight size={13}/></button><button onClick={()=>setInfo('allergenes')}>Infos allergènes <ArrowRight size={13}/></button></nav>
+          <nav className="footer-links" aria-label="Liens utiles"><h3>Un petit raccourci</h3><button onClick={()=>onNavigate('Favoris')}>Mes favoris <Heart size={13}/></button><button onClick={()=>onNavigate('Commandes')}>Mes commandes <ArrowRight size={13}/></button><button onClick={()=>setInfo('questions')}>Questions fréquentes <ArrowRight size={13}/></button><button onClick={()=>setInfo('allergenes')}>Infos allergènes <ArrowRight size={13}/></button>{phone&&<a href={`tel:${phone.replace(/[^+0-9]/g,'')}`}>Appeler le restaurant <ArrowRight size={13}/></a>}{email&&<a href={`mailto:${encodeURIComponent(email).replace('%40','@')}`}>Écrire au restaurant <ArrowRight size={13}/></a>}{documents.map(item=><a key={item.label} href={item.url} rel="noreferrer">{item.label} <ArrowRight size={13}/></a>)}</nav>
         </div>
         <div className="footer-bottom"><span>© {new Date().getFullYear()} {settings?.name||'STC'} · Fait avec appétit.</span><button onClick={()=>setInfo('confidentialite')}>{demo?'Confidentialité & démo':'Confidentialité'}</button><button className="footer-top" onClick={()=>window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})} aria-label="Revenir en haut de la page"><ArrowUp size={15}/></button></div>
       </div>

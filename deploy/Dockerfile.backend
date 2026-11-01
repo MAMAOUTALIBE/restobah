@@ -5,6 +5,7 @@ COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt \
     && groupadd --gid 10001 stc && useradd --uid 10001 --gid stc --create-home stc
 COPY --chown=stc:stc backend/ ./
+COPY --chown=stc:stc scripts/backup.py ./scripts/backup.py
 RUN mkdir -p media staticfiles .private-emails .runtime && chown -R stc:stc media staticfiles .private-emails .runtime \
     && chmod 700 .private-emails .runtime
 USER stc

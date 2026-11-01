@@ -56,17 +56,37 @@ export default function App(){
   const closeCart=useCallback(()=>setCartOpen(false),[]);
   const reconcile=cart.reconcile;
   const loadGeneration=useRef(0);
+  const restaurantActive=useRef(false);
+  const restaurantRequest=useRef<Promise<RestaurantSettings>|null>(null);
+  // Polling and checkout share one settings source. A confirmation gets a new
+  // read after any older polling request, so its result cannot be overwritten.
+  const refreshRestaurant=useCallback(function readRestaurant(fresh=false):Promise<RestaurantSettings>{
+    const running=restaurantRequest.current;
+    if(running){
+      if(!fresh)return running;
+      return running.catch(()=>undefined).then(()=>readRestaurant(true));
+    }
+    if(!restaurantActive.current)return Promise.reject(new Error('La page a changé. Rouvrez votre panier pour réessayer.'));
+    const request:Promise<RestaurantSettings>=restaurantApi.getRestaurant().then(restaurant=>{
+      if(!restaurantActive.current)throw new Error('La page a changé. Rouvrez votre panier pour réessayer.');
+      setSettings(restaurant);
+      return restaurant;
+    }).finally(()=>{if(restaurantRequest.current===request)restaurantRequest.current=null;});
+    restaurantRequest.current=request;
+    return request;
+  },[]);
+  const refreshCheckoutSettings=useCallback(()=>refreshRestaurant(true),[refreshRestaurant]);
   const load=useCallback(async()=>{
     const generation=++loadGeneration.current;
     setLoading(true);setLoadError('');
     try{
-      const [catalog,restaurant,list]=await Promise.all([restaurantApi.getProducts(),restaurantApi.getRestaurant(),restaurantApi.getCategories().catch(()=>[] as CategoryInfo[])]);
+      const [catalog,,list]=await Promise.all([restaurantApi.getProducts(),refreshRestaurant(),restaurantApi.getCategories().catch(()=>[] as CategoryInfo[])]);
       if(generation!==loadGeneration.current)return;
-      setProducts(catalog);setSettings(restaurant);setCategoryInfo(list);reconcile(catalog);
+      setProducts(catalog);setCategoryInfo(list);reconcile(catalog);
     }catch(error){if(generation===loadGeneration.current)setLoadError(messageOf(error));}
     finally{if(generation===loadGeneration.current)setLoading(false);}
-  },[reconcile]);
-  useEffect(()=>{void load();try{localStorage.removeItem('smash-orders');}catch{/* old simulated history is no longer authoritative */}return()=>{loadGeneration.current++;};},[load]);
+  },[reconcile,refreshRestaurant]);
+  useEffect(()=>{restaurantActive.current=true;void load();try{localStorage.removeItem('smash-orders');}catch{/* old simulated history is no longer authoritative */}return()=>{restaurantActive.current=false;loadGeneration.current++;};},[load]);
   useEffect(()=>{if(toast){const timer=window.setTimeout(()=>setToast(null),4500);return()=>window.clearTimeout(timer);}},[toast]);
   useEffect(()=>{
     if(loading)return;
@@ -76,8 +96,8 @@ export default function App(){
       if(stopped||inFlight||document.visibilityState!=='visible')return;
       inFlight=true;
       try{
-        const [catalog,restaurant,list]=await Promise.allSettled([
-          restaurantApi.getProducts(),restaurantApi.getRestaurant(),restaurantApi.getCategories(),
+        const [catalog,,list]=await Promise.allSettled([
+          restaurantApi.getProducts(),refreshRestaurant(),restaurantApi.getCategories(),
         ]);
         if(stopped)return;
         if(catalog.status==='fulfilled'){
@@ -86,7 +106,6 @@ export default function App(){
             ?catalog.value.find(product=>product.id===current.id)??{...current,available:false}
             :null);
         }
-        if(restaurant.status==='fulfilled')setSettings(restaurant.value);
         if(list.status==='fulfilled')setCategoryInfo(list.value);
       }finally{inFlight=false;}
     };
@@ -99,7 +118,7 @@ export default function App(){
       window.removeEventListener('focus',resume);
       document.removeEventListener('visibilitychange',resume);
     };
-  },[loading,reconcile]);
+  },[loading,reconcile,refreshRestaurant]);
   const navigate=useCallback((next:View)=>{
     if(next==='Panier'){setCartOpen(true);return;}
     setView(next);
@@ -144,7 +163,7 @@ export default function App(){
     <Footer onNavigate={navigate} settings={settings}/>
     <BottomNavigation view={cartOpen?'Panier':view} count={cart.count} onNavigate={navigate}/>
     {selected&&<ProductDetails key={selected.id} product={selected} onClose={closeProduct} onAdd={item=>{cart.add(item);setToast({message:`${item.product.name} ajouté au panier`,showCart:true});}}/>}
-    {cartOpen&&<Cart cart={cart} settings={session.loading?null:settings} user={session.user} onClose={closeCart} onRegistered={registered} onComplete={order=>{setCartOpen(false);setView('Commandes');setToast({message:order.demoMode?'Commande de démonstration confirmée !':'Commande enregistrée !',showCart:false});window.scrollTo(0,0);}}/>}
+    {cartOpen&&<Cart cart={cart} settings={session.loading?null:settings} refreshSettings={refreshCheckoutSettings} user={session.user} onClose={closeCart} onRegistered={registered} onComplete={order=>{setCartOpen(false);setSelected(null);setView('Commandes');setToast({message:order.demoMode?'Commande de démonstration confirmée !':order.paymentMethod==='on_site'?`Commande confirmée · À régler ${order.mode==='Livraison'?'à la livraison':'au restaurant'}`:'Commande enregistrée !',showCart:false});window.scrollTo(0,0);}}/>}
     {toast&&<div className="toast" role="status"><Check size={18}/>{toast.message}{toast.showCart&&<button onClick={()=>{setCartOpen(true);setToast(null);}}>Voir le panier</button>}<button aria-label="Fermer la notification" onClick={()=>setToast(null)}>×</button></div>}
   </>;
 }

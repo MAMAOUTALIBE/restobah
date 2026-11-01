@@ -348,3 +348,16 @@ class ClosureForm(forms.ModelForm):
 class OrderStatusForm(forms.Form):
     status = forms.ChoiceField(choices=Order.STATUS)
     expected_status = forms.ChoiceField(choices=Order.STATUS)
+
+
+class OnSitePaymentForm(forms.Form):
+    expected_status = forms.ChoiceField(choices=Order.STATUS)
+    expected_payment_status = forms.ChoiceField(choices=Order.PAYMENT)
+
+    def clean(self):
+        data = super().clean()
+        allowed = {'expected_status', 'expected_payment_status', 'csrfmiddlewaretoken',
+                   'return_filter', 'return_q', 'return_page'}
+        if set(self.data) - allowed:
+            raise forms.ValidationError('Les champs de cette opération ne sont pas acceptés.')
+        return data

@@ -104,7 +104,7 @@ class CRMTests(TestCase):
         return data
 
     def order(self, status='confirmed', payment='simulated'):
-        order = Order.objects.create(scope='crm-test', idempotency_key=uuid.uuid4().hex, payload_hash='f' * 64, mode='À emporter', status=status, payment_status=payment, subtotal=Decimal('5.00'), total=Decimal('5.00'), customer={'name': 'Client privé', 'email': 'prive@example.com', 'phone': '0612345678'})
+        order = Order.objects.create(scope='crm-test', idempotency_key=uuid.uuid4().hex, payload_hash='f' * 64, mode='À emporter', status=status, payment_status=payment, payment_method='simulation' if payment == 'simulated' else 'stripe', subtotal=Decimal('5.00'), total=Decimal('5.00'), customer={'name': 'Client privé', 'email': 'prive@example.com', 'phone': '0612345678'})
         OrderLine.objects.create(order=order, product_id=6, name='Recette historique', quantity=1, unit_price=Decimal('5.00'), total=Decimal('5.00'))
         OrderHistory.objects.create(order=order, status=status)
         return order

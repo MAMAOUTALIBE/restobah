@@ -59,6 +59,8 @@ En hébergement, configurer `EMAIL_BACKEND=django.core.mail.backends.smtp.EmailB
 
 ## Sauvegardes
 
+La [procédure de sauvegarde complète et de planification](BACKUPS.md) couvre PostgreSQL, médias, fichiers privés, manifeste SHA-256, rétention et contrôle de fraîcheur. Les unités systemd fournies ne sont pas installées automatiquement.
+
 SQLite local :
 
 ```sh
@@ -203,6 +205,8 @@ docker compose up -d
 ## Mise à jour et retour arrière
 
 Conserver la version des images déployées, une sauvegarde de la base et les migrations associées. Tester les migrations sur une copie avant déploiement. Ne pas lancer une migration inverse destructrice par défaut : revenir au code précédent seulement s’il reste compatible avec le schéma, sinon restaurer une sauvegarde pendant la maintenance.
+
+Le paiement sur place exige également une compatibilité métier : une ancienne image comme `0c5c588` ne sait pas traiter les nouvelles commandes `on_site`. Son repli peut être vérifié pour l’ancienne démonstration restée en simulation ; il ne constitue pas un retour arrière autorisé pour un restaurant réel acceptant des paiements sur place. Dans ce cas, garder une image compatible ou mettre les nouvelles commandes en maintenance pendant l’intervention. Ne jamais requalifier les paiements, effacer leur historique ou inverser automatiquement la migration pour faire fonctionner un ancien code.
 
 ## Limites de la livraison locale
 

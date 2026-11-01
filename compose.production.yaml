@@ -1,6 +1,7 @@
 # Production override. Requires real DNS, ports 80/443, .env production values.
 # This delivery still permits TEST payments only.
 services:
+  # Runtime and private e-mails inherit backend-only named volumes from compose.yaml.
   backend:
     environment:
       DJANGO_DEBUG: '0'

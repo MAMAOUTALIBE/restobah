@@ -6,6 +6,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.mail import send_mail
 from django.db import connection, IntegrityError, transaction
+from django.db.models.deletion import ProtectedError
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import render
@@ -14,6 +15,7 @@ from django.utils.cache import add_never_cache_headers
 from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework import permissions, status
 from rest_framework.exceptions import ValidationError, AuthenticationFailed
@@ -41,6 +43,8 @@ def csrf_failure(request,reason=''):
                 'product_edit': ('crm:product_edit', 'Actualiser le formulaire'),
                 'product_availability': ('crm:menu', 'Revenir à ma carte'),
                 'order_status': ('crm:orders', 'Revenir aux commandes'),
+                'order_collect': ('crm:orders', 'Revenir aux commandes'),
+                'order_refund': ('crm:orders', 'Revenir aux commandes'),
                 'restaurant': ('crm:restaurant', 'Actualiser le formulaire'),
                 'closure_add': ('crm:restaurant', 'Revenir à mon restaurant'),
                 'closure_delete': ('crm:restaurant', 'Revenir à mon restaurant'),
@@ -55,13 +59,20 @@ def csrf_failure(request,reason=''):
         }, status=403)
         add_never_cache_headers(response)
         return response
-    return JsonResponse({'detail':'Session de sécurité expirée. Actualisez la page et réessayez.'},status=403)
+    response = JsonResponse({'detail':'Session de sécurité expirée. Actualisez la page et réessayez.'},status=403)
+    # CSRF can reject a request before the private view's dispatch decorator runs.
+    add_never_cache_headers(response)
+    return response
 
 def user_data(user):
     return {'id':user.id,'name':user.first_name,'email':user.email}
 
+@method_decorator(never_cache,name='dispatch')
+class PrivateAPIView(APIView):
+    """Session and personal responses must not be retained by HTTP caches."""
+
 @method_decorator(csrf_protect,name='dispatch')
-class ProtectedView(APIView):
+class ProtectedView(PrivateAPIView):
     pass
 
 class HealthView(APIView):
@@ -75,7 +86,7 @@ class HealthView(APIView):
             return Response({'status':'unavailable'},status=503)
 
 @method_decorator(ensure_csrf_cookie,name='dispatch')
-class CsrfView(APIView):
+class CsrfView(PrivateAPIView):
     def get(self,request):
         get_token(request)
         if not request.session.session_key or not request.session.exists(request.session.session_key):
@@ -95,7 +106,7 @@ class RestaurantView(APIView):
     def get(self,request):
         return Response(restaurant_data())
 
-class MeView(APIView):
+class MeView(PrivateAPIView):
     def get(self,request):
         return Response({'user':user_data(request.user) if request.user.is_authenticated else None})
 
@@ -183,9 +194,14 @@ class DeleteAccountView(AuthView):
             raise ValidationError({'password':['Mot de passe incorrect.']})
         if request.user.is_staff:
             raise ValidationError('Les comptes de l’équipe se suppriment depuis l’administration.')
-        with transaction.atomic():
-            # Orders keep their contact snapshot but are detached from the account (on_delete=SET_NULL).
-            User.objects.select_for_update().get(pk=request.user.pk).delete()
+        try:
+            with transaction.atomic():
+                # Orders keep their contact snapshot but are detached from the account (on_delete=SET_NULL).
+                User.objects.select_for_update().get(pk=request.user.pk).delete()
+        except ProtectedError:
+            # Former staff can still be protected actors in the financial register.
+            # Handle refusal after the transaction has rolled back every related change.
+            raise ValidationError('Ce compte ne peut pas être supprimé. Contactez le restaurant.')
         logout(request)
         return Response({'detail':'Votre compte a été supprimé. Les commandes déjà passées restent enregistrées par le restaurant.'})
 
@@ -250,7 +266,7 @@ class OrdersView(ProtectedView):
         order,created = create_order(request,serializer.validated_data,request.headers.get('Idempotency-Key',''))
         return Response(order_data(order,include_token=True),status=201 if created else 200)
 
-class OrderView(APIView):
+class OrderView(PrivateAPIView):
     def get(self,request,pk):
         order = authorized_order(request,pk,allow_staff=True)
         # Guest token grants access to totals and tracking, not contact PII.

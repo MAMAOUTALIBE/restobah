@@ -1,8 +1,11 @@
 name: STC checks
 on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     services:
       postgres:
         image: postgres:17-alpine
@@ -34,18 +37,56 @@ jobs:
       - run: backend/.venv/bin/pip install -r backend/requirements.txt
       - run: npm ci
       - run: npm run check
+      - name: Audit all JavaScript dependencies
+        run: npm audit --audit-level=moderate
       - run: python -m pip install pip-audit
       - run: python -m pip_audit -r backend/requirements.txt --no-deps --disable-pip
       - run: backend/.venv/bin/python backend/manage.py makemigrations --check --dry-run
+      - name: Apply migrations on the disposable PostgreSQL database
+        run: backend/.venv/bin/python backend/manage.py migrate --noinput
       - run: npm run test:backend
+      - name: Test backup and delivery tooling on temporary fixtures
+        run: python3 -m unittest discover -s tests -p 'test_operations.py' -v
       - run: npx playwright install --with-deps chromium
-      # Isolated servers (ports 8001/5174) on the CI PostgreSQL database.
-      - run: python3 scripts/e2e.py
+      # Disposable PostgreSQL data, accounts, private e-mails and media only.
+      - name: Browser regression suite (demonstration)
+        run: python3 scripts/e2e.py --workers=1 --output=test-results/default
         env:
           STC_E2E_DATABASE_URL: postgres://stc:stc-ci-only@localhost:5432/stc
+          STC_E2E_PAYMENT_MODE: simulation
+          STC_E2E_DEMO_MODE: '1'
+      - name: Create a separate disposable database for real on-site orders
+        run: |
+          backend/.venv/bin/python - <<'PY'
+          import psycopg
+          from psycopg import sql
+
+          with psycopg.connect(
+              "postgres://stc:stc-ci-only@localhost:5432/postgres", autocommit=True
+          ) as connection:
+              connection.execute(sql.SQL("CREATE DATABASE {} OWNER {}").format(
+                  sql.Identifier("stc_onsite"), sql.Identifier("stc")
+              ))
+          PY
+      - name: Browser acceptance suite (real orders, payment on site)
+        run: python3 scripts/e2e.py tests/onsite.spec.ts --workers=1 --output=test-results/onsite
+        env:
+          STC_E2E_DATABASE_URL: postgres://stc:stc-ci-only@localhost:5432/stc_onsite
+          STC_E2E_PAYMENT_MODE: on_site
+          STC_E2E_DEMO_MODE: '0'
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
-          name: browser-test-results
-          path: test-results/
+          name: browser-demonstration-results
+          path: test-results/default/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-onsite-results
+          path: test-results/onsite/
+          include-hidden-files: true
+          if-no-files-found: ignore
           retention-days: 7

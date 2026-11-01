@@ -4,6 +4,16 @@ import {restaurantApi,ApiError,messageOf} from '../services/api';
 import {forgetCheckoutForOrder,redirectToPayment} from '../services/payment';
 import {euro,statusLabels,type GuestOrderRef,type Order,type User} from '../types';
 
+function paymentLabel(order:Order){
+  if(order.paymentMethod==='on_site'||order.paymentStatus==='due'){
+    if(order.paymentStatus==='paid')return 'Réglé sur place';
+    if(order.paymentStatus==='refunded')return 'Remboursé sur place';
+    if(order.paymentStatus==='cancelled')return 'Règlement annulé';
+    return order.mode==='Livraison'?'À régler à la livraison':'À régler au restaurant';
+  }
+  return order.paymentStatus==='simulated'?'Paiement simulé · Aucun prélèvement':order.paymentStatus==='paid'?'Paiement confirmé':order.paymentStatus==='refunded'?'Paiement remboursé':order.paymentStatus==='failed'?'Le paiement a échoué':order.paymentStatus==='cancelled'?'Paiement annulé':'Paiement en attente';
+}
+
 export function Orders({user,references,paymentReturn,onBrowse,onPaid}:{user:User|null;references:GuestOrderRef[];paymentReturn:string|null;onBrowse:()=>void;onPaid:(order:Order)=>void}){
   const [orders,setOrders]=useState<Order[]>([]);
   const [loading,setLoading]=useState(true);
@@ -59,8 +69,8 @@ export function Orders({user,references,paymentReturn,onBrowse,onPaid}:{user:Use
         {order.status!=='cancelled'&&order.status!=='pending_payment'&&<div className="tracking" aria-label={`Suivi : ${statusLabels[order.status]}`}>{milestones.map((status,index)=><div className={index<=current?'done':'pending'} key={status}><span>{index===0?<Check/>:index===1?<ChefHat/>:<PackageCheck/>}</span><p>{statusLabels[status]}</p></div>)}</div>}
         <div className="order-lines">{order.lines.map((line,index)=><div className="order-line" key={index}><div><strong>{line.quantity} × {line.name}</strong>{line.choices.length>0&&<p>{line.choices.join(' · ')}</p>}</div><span>{euro(line.total)}</span></div>)}</div>
         {order.deliveryFee>0&&<p className="order-delivery">Livraison <span>{euro(order.deliveryFee)}</span></p>}
-        <p className="payment-note">{order.paymentStatus==='simulated'?'Paiement simulé · Aucun prélèvement':order.paymentStatus==='paid'?'Paiement confirmé':order.paymentStatus==='refunded'?'Paiement remboursé':order.paymentStatus==='failed'?'Le paiement a échoué':order.paymentStatus==='cancelled'?'Paiement annulé':'Paiement en attente'}</p>
-        {(order.paymentStatus==='pending'||order.paymentStatus==='failed')&&order.status!=='cancelled'&&<button className="primary" disabled={busy===order.id} onClick={()=>void pay(order)}><CreditCard size={16}/>{busy===order.id?'Connexion au paiement…':'Reprendre le paiement test'}</button>}
+        <p className="payment-note">{paymentLabel(order)}</p>
+        {order.paymentMethod!=='on_site'&&(order.paymentStatus==='pending'||order.paymentStatus==='failed')&&order.status!=='cancelled'&&<button className="primary" disabled={busy===order.id} onClick={()=>void pay(order)}><CreditCard size={16}/>{busy===order.id?'Connexion au paiement…':'Reprendre le paiement test'}</button>}
         {order.history.length>0&&<details className="order-events"><summary>Historique du suivi</summary><ol>{order.history.map((event,index)=><li key={index}><span>{statusLabels[event.status]||event.status}</span><time dateTime={event.date}>{new Intl.DateTimeFormat('fr-FR',{dateStyle:'short',timeStyle:'short'}).format(new Date(event.date))}</time></li>)}</ol></details>}
         {order.demoMode&&<span className="demo-pill">Démonstration · Commande enregistrée, aucun repas préparé</span>}
       </article>;

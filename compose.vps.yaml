@@ -2,6 +2,7 @@
 # for example a VPS that already serves other sites on ports 80/443.
 # The stack only listens on 127.0.0.1:${STC_HTTP_PORT}; see deploy/nginx-host.conf.example.
 services:
+  # Runtime and private e-mails inherit backend-only named volumes from compose.yaml.
   backend:
     environment:
       DJANGO_DEBUG: '0'

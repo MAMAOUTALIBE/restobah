@@ -40,7 +40,10 @@ def order_confirmed(order_id):
         where = f"Livraison à : {customer.get('address','')}, {customer.get('postal','')} {customer.get('city','')}"
     else:
         where = f'Retrait au restaurant : {restaurant.address}, {restaurant.city}' if restaurant else 'Retrait au restaurant'
-    payment = 'Paiement simulé : aucun prélèvement.' if order.payment_status == 'simulated' else 'Paiement confirmé par carte (Stripe, mode test).'
+    if order.payment_method == 'on_site':
+        payment = f'{order.payment_label}. Le règlement est effectué auprès de l’équipe ; aucun prélèvement en ligne.'
+    else:
+        payment = 'Paiement simulé : aucun prélèvement.' if order.payment_status == 'simulated' else 'Paiement confirmé par carte (Stripe, mode test).'
     demo = 'Commande de démonstration : aucun repas ne sera préparé.\n\n' if order.demo_mode else ''
     send(f'{name} — Commande {order.id} confirmée',
          f"Bonjour {customer.get('name','')},\n\nNous avons bien reçu votre commande {order.id}.\n\n{demo}{order_summary(order)}\n\n{where}\n{payment}\n\n"

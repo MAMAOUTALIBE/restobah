@@ -46,7 +46,7 @@ class OrderInputSerializer(StrictSerializer):
     mode = serializers.ChoiceField(choices=['À emporter','Livraison'])
     items = ItemSerializer(many=True,allow_empty=False,max_length=50)
     customer = CustomerSerializer()
-    paymentMethod = serializers.ChoiceField(choices=['simulation','stripe'])
+    paymentMethod = serializers.ChoiceField(choices=['simulation','stripe','on_site'])
     def validate(self,data):
         if data['mode'] == 'Livraison':
             customer = data['customer']

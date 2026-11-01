@@ -10,6 +10,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError, NotFound
 from .models import Restaurant, Category, Product, OptionGroup, Choice, Order, OrderLine, OrderHistory
 from .notifications import order_confirmed
+from .public_details import public_details
 
 WEEKDAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche']
 
@@ -22,19 +23,32 @@ def period_text(periods):
 
 def hours_summary(restaurant, periods):
     """Footer summary: one line when every day shares the same hours, otherwise today's hours."""
-    today = timezone.localdate()
+    at = timezone.localtime()
+    today = at.date()
     if restaurant.closures.filter(date=today).exists():
         return 'Aujourd’hui', 'Fermé exceptionnellement'
     by_day = [[(p.opens,p.closes) for p in periods if p.weekday == day] for day in range(7)]
     if by_day[0] and all(day == by_day[0] for day in by_day):
         return 'Tous les jours', period_text([p for p in periods if p.weekday == 0])
-    return f'Aujourd’hui ({WEEKDAYS[today.weekday()].lower()})', period_text([p for p in periods if p.weekday == today.weekday()])
+    from datetime import timedelta
+    previous = today - timedelta(days=1)
+    continuing = [p for p in periods if p.weekday == previous.weekday()
+                  and p.opens >= p.closes and at.time().replace(tzinfo=None) < p.closes]
+    if continuing and not restaurant.closures.filter(date=previous).exists():
+        closing = max(period.closes for period in continuing)
+        summary = f'Jusqu’à {closing:%Hh%M}'
+        current = [p for p in periods if p.weekday == today.weekday()]
+        if current:
+            summary += f' · {period_text(current)}'
+    else:
+        summary = period_text([p for p in periods if p.weekday == today.weekday()])
+    return f'Aujourd’hui ({WEEKDAYS[today.weekday()].lower()})', summary
 
 def restaurant_data():
     restaurant = restaurant_instance()
     periods = list(restaurant.opening_hours.all())
     days, hours = hours_summary(restaurant, periods)
-    return {'name':restaurant.name,'address':restaurant.address,'city':restaurant.city,'hours':hours,'days':days,'deliveryFee':float(restaurant.delivery_fee),'minDeliveryTotal':float(restaurant.min_delivery_total),'deliveryPostalCodes':restaurant.delivery_postal_codes,'orderingEnabled':restaurant.ordering_enabled,'isOpen':bool(settings.DEMO_MODE or restaurant.is_open()),'demoMode':settings.DEMO_MODE,'paymentMode':settings.PAYMENT_MODE,'openingHours':[{'weekday':p.weekday,'opens':p.opens.strftime('%H:%M'),'closes':p.closes.strftime('%H:%M')} for p in periods],'pickupEnabled':restaurant.pickup_enabled,'deliveryEnabled':restaurant.delivery_enabled and bool(restaurant.delivery_postal_codes),'pickupDelay':restaurant.pickup_delay,'deliveryDelay':restaurant.delivery_delay}
+    return {'name':restaurant.name,'address':restaurant.address,'city':restaurant.city,'hours':hours,'days':days,'deliveryFee':float(restaurant.delivery_fee),'minDeliveryTotal':float(restaurant.min_delivery_total),'deliveryPostalCodes':restaurant.delivery_postal_codes,'orderingEnabled':restaurant.ordering_enabled,'isOpen':bool(settings.DEMO_MODE or restaurant.is_open()),'demoMode':settings.DEMO_MODE,'paymentMode':settings.PAYMENT_MODE,'openingHours':[{'weekday':p.weekday,'opens':p.opens.strftime('%H:%M'),'closes':p.closes.strftime('%H:%M')} for p in periods],'pickupEnabled':restaurant.pickup_enabled,'deliveryEnabled':restaurant.delivery_enabled and bool(restaurant.delivery_postal_codes),'pickupDelay':restaurant.pickup_delay,'deliveryDelay':restaurant.delivery_delay,**public_details()}
 
 def categories_data():
     return [{'name':c.name,'position':c.position} for c in Category.objects.all()]
@@ -49,7 +63,7 @@ def product_data(product, request=None):
 
 def order_data(order, include_token=False, include_customer=False):
     lines = list(order.lines.all())
-    result = {'id':order.id,'date':order.date.isoformat(),'subtotal':float(order.subtotal),'deliveryFee':float(order.delivery_fee),'total':float(order.total),'mode':order.mode,'status':order.status,'paymentStatus':order.payment_status,'demoMode':order.demo_mode,'items':[f'{line.quantity} × {line.name}' for line in lines],'lines':[{'name':line.name,'quantity':line.quantity,'unitPrice':float(line.unit_price),'total':float(line.total),'choices':line.choices} for line in lines],'history':[{'status':h.status,'date':h.date.isoformat()} for h in order.history.all()]}
+    result = {'id':order.id,'date':order.date.isoformat(),'subtotal':float(order.subtotal),'deliveryFee':float(order.delivery_fee),'total':float(order.total),'mode':order.mode,'status':order.status,'paymentStatus':order.payment_status,'paymentMethod':order.payment_method,'demoMode':order.demo_mode,'items':[f'{line.quantity} × {line.name}' for line in lines],'lines':[{'name':line.name,'quantity':line.quantity,'unitPrice':float(line.unit_price),'total':float(line.total),'choices':line.choices} for line in lines],'history':[{'status':h.status,'date':h.date.isoformat()} for h in order.history.all()]}
     if include_token:
         result['accessToken'] = order.access_token
     if include_customer:
@@ -154,10 +168,11 @@ def _create_order(request,data,key):
                 raise ValidationError(f'Le minimum de livraison est de {restaurant.min_delivery_total} €.')
             delivery_fee = restaurant.delivery_fee if data['mode'] == 'Livraison' else Decimal('0.00')
             simulated = data['paymentMethod'] == 'simulation'
-            order = Order.objects.create(user=request.user if request.user.is_authenticated else None,scope=scope,idempotency_key=key,payload_hash=payload_hash,mode=data['mode'],status='confirmed' if simulated else 'pending_payment',payment_status='simulated' if simulated else 'pending',demo_mode=settings.DEMO_MODE,subtotal=subtotal,delivery_fee=delivery_fee,total=subtotal+delivery_fee,customer=data['customer'])
+            on_site = data['paymentMethod'] == 'on_site'
+            order = Order.objects.create(user=request.user if request.user.is_authenticated else None,scope=scope,idempotency_key=key,payload_hash=payload_hash,mode=data['mode'],status='confirmed' if simulated or on_site else 'pending_payment',payment_status='simulated' if simulated else 'due' if on_site else 'pending',payment_method=settings.PAYMENT_MODE,demo_mode=settings.DEMO_MODE,subtotal=subtotal,delivery_fee=delivery_fee,total=subtotal+delivery_fee,customer=data['customer'])
             OrderLine.objects.bulk_create([OrderLine(order=order,**line) for line in lines])
             OrderHistory.objects.create(order=order,status=order.status)
-            if simulated:
+            if simulated or on_site:
                 # Stripe orders are confirmed, and e-mailed, by the verified webhook.
                 transaction.on_commit(lambda: order_confirmed(order.id))
             return order, True

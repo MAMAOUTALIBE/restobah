@@ -1,0 +1,22 @@
+{% if order.crm_can_collect %}
+<form method="post" action="{% url 'crm:order_collect' order.pk %}" data-confirm="Confirmez-vous avoir reçu le règlement physique de {{ order.total|floatformat:2 }} € pour {{ order.pk }} ? Cette action enregistre le règlement ; elle ne débite aucun moyen de paiement." data-submit-lock>
+{% csrf_token %}
+<input type="hidden" name="expected_status" value="{{ order.status }}">
+<input type="hidden" name="expected_payment_status" value="{{ order.payment_status }}">
+<input type="hidden" name="return_filter" value="{{ status_filter|default:'active' }}">
+<input type="hidden" name="return_q" value="{{ q }}">
+<input type="hidden" name="return_page" value="{{ page_obj.number|default:1 }}">
+<button type="submit" class="crm-button crm-button-primary">Enregistrer l’encaissement · {{ order.total|floatformat:2 }} €</button>
+</form>
+{% endif %}
+{% if order.crm_can_refund %}
+<form method="post" action="{% url 'crm:order_refund' order.pk %}" data-confirm="Confirmez-vous avoir remboursé physiquement la totalité de {{ order.total|floatformat:2 }} € pour {{ order.pk }} ?{% if order.status != 'completed' and order.status != 'cancelled' %} La commande sera aussi annulée.{% endif %}" data-submit-lock>
+{% csrf_token %}
+<input type="hidden" name="expected_status" value="{{ order.status }}">
+<input type="hidden" name="expected_payment_status" value="{{ order.payment_status }}">
+<input type="hidden" name="return_filter" value="{{ status_filter|default:'active' }}">
+<input type="hidden" name="return_q" value="{{ q }}">
+<input type="hidden" name="return_page" value="{{ page_obj.number|default:1 }}">
+<button type="submit" class="crm-button crm-button-outline">{% if order.status == 'completed' or order.status == 'cancelled' %}Confirmer le remboursement{% else %}Confirmer le remboursement et annuler{% endif %}</button>
+</form>
+{% endif %}

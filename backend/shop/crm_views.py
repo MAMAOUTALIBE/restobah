@@ -1,7 +1,7 @@
 """Restaurant manager pages. Every mutation is checked and persisted server-side."""
 from decimal import Decimal
 from functools import wraps
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from django.conf import settings
 from django.contrib import messages
@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Q, Sum
-from django.http import HttpResponseBadRequest
+from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -21,12 +21,13 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from .crm_forms import (
-    AvailabilityForm, ClosureForm, OpeningFormSet, OrderStatusForm, ProductForm,
+    AvailabilityForm, ClosureForm, OpeningFormSet, OrderStatusForm, OnSitePaymentForm, ProductForm,
     RestaurantForm, StaffLoginForm, has_crm_access, product_fingerprint,
     product_revision, revision_matches,
 )
 from .models import Category, Closure, Order, Product, Restaurant
 from .payments import release_checkout
+from .onsite_payments import record_payment
 from .services import product_data
 
 
@@ -45,6 +46,7 @@ def _permissions(user):
         'change_products': allowed('shop.view_product', 'shop.change_product'),
         'view_orders': allowed('shop.view_order'),
         'change_orders': allowed('shop.view_order', 'shop.change_order'),
+        'record_onsite_payment': allowed('shop.view_order', 'shop.change_order', 'shop.record_onsite_payment'),
         'view_restaurant': allowed('shop.view_restaurant'),
         'change_restaurant': allowed('shop.view_restaurant', 'shop.change_restaurant'),
     }
@@ -131,6 +133,8 @@ def _decorate_order(order, can_change):
     order.crm_next_status = ''
     order.crm_next_label = ''
     order.crm_can_cancel = False
+    order.crm_can_collect = order.payment_method == 'on_site' and order.payment_status == 'due' and order.status in {'confirmed','preparing','ready'}
+    order.crm_can_refund = order.payment_method == 'on_site' and order.payment_status == 'paid' and any(event.kind == 'collected' for event in order.onsite_events.all())
     if not can_change:
         return order
     next_step = {'confirmed': ('preparing', 'Préparer'),
@@ -164,7 +168,7 @@ def _dashboard_context(request):
         stats['today_total'] = today.filter(payment_status__in=['paid', 'simulated']).exclude(status='cancelled') \
             .aggregate(amount=Sum('total'))['amount'] or Decimal('0.00')
         recent = [_decorate_order(order, context['permissions']['change_orders'])
-                  for order in orders.prefetch_related('lines', 'history')[:6]]
+                  for order in orders.prefetch_related('lines', 'history', 'onsite_events__actor')[:6]]
     if context['permissions']['view_products']:
         stats['unavailable_products'] = sum(not product_data(product)['available'] for product in _products())
     context.update(stats=stats, recent_orders=recent)
@@ -188,12 +192,14 @@ def dashboard_fragment(request):
 ORDER_FILTERS = {'active', 'history', 'all', *(value for value, _label in Order.STATUS)}
 
 
-def _orders_context(request):
-    context = _base(request, 'commandes')
-    selected = request.GET.get('status', request.POST.get('return_filter', 'active'))
+def _orders_page(request):
+    source = request.POST if request.method == 'POST' else request.GET
+    selected = source.get('return_filter' if request.method == 'POST' else 'status', 'active')
     selected = selected if selected in ORDER_FILTERS else 'active'
-    query = request.GET.get('q', '')[:140].strip()
-    orders = Order.objects.prefetch_related('lines', 'history')
+    query = source.get('return_q' if request.method == 'POST' else 'q', '')[:140].strip()
+    number = source.get('return_page' if request.method == 'POST' else 'page', '1')[:20]
+    number = int(number) if number.isascii() and number.isdecimal() else 1
+    orders = Order.objects.prefetch_related('lines', 'history', 'onsite_events__actor')
     if selected == 'active':
         orders = orders.filter(status__in=['pending_payment', 'confirmed', 'preparing', 'ready'])
     elif selected == 'history':
@@ -203,10 +209,20 @@ def _orders_context(request):
     if query:
         orders = orders.filter(Q(id__icontains=query) | Q(customer__name__icontains=query)
                                | Q(customer__phone__icontains=query))
-    page = Paginator(orders, 30).get_page(request.GET.get('page', '1'))
+    return selected, query, Paginator(orders, 30).get_page(max(number, 1))
+
+
+def _orders_context(request):
+    context = _base(request, 'commandes')
+    selected, query, page = _orders_page(request)
     context.update(orders=[_decorate_order(order, context['permissions']['change_orders']) for order in page],
                    page_obj=page, status_filter=selected, q=query)
     return context
+
+
+def _orders_return_url(request):
+    selected, query, page = _orders_page(request)
+    return f'{reverse("crm:orders")}?{urlencode({"status": selected, "q": query, "page": page.number})}'
 
 
 @crm_required('shop.view_order')
@@ -243,22 +259,59 @@ def order_status(request, pk):
         messages.error(request, ' '.join(error.messages))
         return render(request, 'shop/crm/orders.html', _orders_context(request), status=409)
     messages.success(request, f'Commande {order.pk} mise à jour : {order.get_status_display().lower()}.')
-    selected = request.POST.get('return_filter', 'active')
-    selected = selected if selected in ORDER_FILTERS else 'active'
-    return redirect(f'{reverse("crm:orders")}?status={selected}')
+    return redirect(_orders_return_url(request))
+
+
+def _record_onsite_payment(request, pk, kind):
+    form = OnSitePaymentForm(request.POST)
+    if not form.is_valid():
+        return HttpResponseBadRequest('L’opération demandée est invalide. Actualisez la page et recommencez.')
+    try:
+        order, changed = record_payment(pk, request.user, kind, **form.cleaned_data)
+    except Order.DoesNotExist:
+        raise Http404('Commande introuvable.')
+    except ValidationError as error:
+        messages.error(request, ' '.join(error.messages))
+        return render(request, 'shop/crm/orders.html', _orders_context(request), status=409)
+    label = 'encaissement' if kind == 'collected' else 'remboursement'
+    messages.success(request, f'Commande {order.pk} : {label} enregistré.' if changed else f'Commande {order.pk} : {label} déjà enregistré.')
+    return redirect(_orders_return_url(request))
+
+
+@crm_required('shop.view_order', 'shop.change_order', 'shop.record_onsite_payment')
+@require_POST
+def order_collect(request, pk):
+    return _record_onsite_payment(request, pk, 'collected')
+
+
+@crm_required('shop.view_order', 'shop.change_order', 'shop.record_onsite_payment')
+@require_POST
+def order_refund(request, pk):
+    return _record_onsite_payment(request, pk, 'refunded')
+
+
+def _menu_selection(request):
+    source = request.POST if request.method == 'POST' else request.GET
+    query = source.get('return_q' if request.method == 'POST' else 'q', '')[:140].strip()
+    category = source.get('return_category' if request.method == 'POST' else 'category', '').strip()
+    # IDs emitted by the category selector are positive signed 64-bit integers.
+    # str.isdigit() also accepts characters such as "²", which int() rejects.
+    if (not category or len(category) > 19 or not category.isascii()
+            or not category.isdecimal() or int(category) > 2**63 - 1):
+        category = ''
+    else:
+        category = str(int(category))
+    return query, category
 
 
 def _menu_context(request):
     context = _base(request, 'carte')
-    query = request.GET.get('q', '')[:140].strip()
-    category = request.GET.get('category', '')
+    query, category = _menu_selection(request)
     products = _products()
     if query:
         products = products.filter(Q(name__icontains=query) | Q(description__icontains=query))
-    if category.isdigit():
+    if category:
         products = products.filter(category_id=category)
-    else:
-        category = ''
     context.update(products=[_decorate_product(product) for product in products],
                    categories=Category.objects.all(), q=query, category_filter=category)
     return context
@@ -322,7 +375,9 @@ def product_availability(request, pk):
         product.available = form.cleaned_data['available']
         product.save(update_fields=['available'])
     messages.success(request, f'« {product.name} » : {"disponible" if product.available else "épuisé"}.')
-    return redirect('crm:menu')
+    query, category = _menu_selection(request)
+    parameters = {key: value for key, value in (('q', query), ('category', category)) if value}
+    return redirect(f'{reverse("crm:menu")}?{urlencode(parameters)}' if parameters else reverse('crm:menu'))
 
 
 def _restaurant_context(request, restaurant, form=None, opening_formset=None, closure_form=None):
@@ -353,7 +408,9 @@ def restaurant(request):
                 opening_formset.save()
                 messages.success(request, 'Les réglages et les horaires sont enregistrés.')
                 return redirect('crm:restaurant')
-        return render(request, 'shop/crm/restaurant.html', _restaurant_context(request, instance, form, opening_formset))
+        # ModelForm validation mutates its instance even when nothing is saved.
+        # Keep the bound draft, but derive service badges from persisted settings.
+        return render(request, 'shop/crm/restaurant.html', _restaurant_context(request, _restaurant(), form, opening_formset))
     instance = _restaurant()
     return render(request, 'shop/crm/restaurant.html', _restaurant_context(request, instance))
 

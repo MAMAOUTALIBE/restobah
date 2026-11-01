@@ -1,0 +1,11 @@
+[Unit]
+Description=STC daily backup schedule (Europe/Paris)
+
+[Timer]
+OnCalendar=*-*-* 03:15:00 Europe/Paris
+RandomizedDelaySec=5m
+Persistent=true
+Unit=stc-backup.service
+
+[Install]
+WantedBy=timers.target

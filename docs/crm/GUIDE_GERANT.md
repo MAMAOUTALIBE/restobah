@@ -35,7 +35,19 @@ Un plat épuisé reste visible sur le site, mais ne peut plus être commandé. S
 2. Ouvrez **Détails et suivi** pour les précisions du client et l’historique.
 3. Cliquez successivement sur **Préparer**, **Marquer prête**, puis **Terminer**, au moment correspondant.
 
-La liste se met à jour automatiquement. Le bouton **Actualiser** permet aussi de demander les dernières informations. Une commande en attente de paiement ne peut pas partir en préparation. Si une action est refusée, lisez le message avant de recommencer ; le statut n’a pas été modifié par ce refus.
+La liste se met à jour automatiquement. Le bouton **Actualiser** permet aussi de demander les dernières informations. Une commande Stripe en attente de paiement ne peut pas partir en préparation. Si une action est refusée, lisez le message avant de recommencer ; le statut n’a pas été modifié par ce refus. Votre recherche et votre page restent conservées après une action.
+
+## Suivre un règlement sur place
+
+Lorsque le restaurant utilise le règlement sur place, la commande arrive **Confirmée**, avec la mention **À régler au restaurant** ou **À régler à la livraison**. Vous pouvez la préparer et la marquer prête avant le règlement.
+
+1. Recevez le règlement physique selon les moyens acceptés par le restaurant.
+2. Cliquez sur **Enregistrer l’encaissement**, puis confirmez. Le montant est celui de la commande ; le logiciel conserve qui a enregistré l’opération et à quelle date.
+3. Cliquez sur **Terminer** après l’encaissement. Si ce bouton n’est pas encore disponible, vérifiez le règlement.
+
+Ces actions demandent un droit dédié. Si vous préparez les commandes sans ce droit, demandez au responsable d’enregistrer le règlement.
+
+Pour un remboursement complet, rendez d’abord la somme au client avec le moyen adapté, puis utilisez **Confirmer le remboursement**. Une commande encore en cours est alors annulée ; une commande déjà terminée conserve son historique. Le logiciel ne débite ni ne rembourse automatiquement une carte et ne remplace pas la caisse du restaurant. Répéter la confirmation ne crée pas un second règlement.
 
 ## Régler les horaires ou mettre les commandes en pause
 

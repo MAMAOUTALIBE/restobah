@@ -335,8 +335,8 @@
   .large-image-card .card-footer { gap: 4px; padding-top: 0; }
 }
 
-/* Follow the menu's wrapping tiers while allowing longer custom content to grow. */
-@media (max-width: 387px) {
+/* Keep room for the menu's second text line across mobile font renderers. */
+@media (max-width: 395px) {
   .product-grid { --mobile-card-min-height: 116px; }
 }
 

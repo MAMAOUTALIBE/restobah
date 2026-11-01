@@ -1,0 +1,15 @@
+[Unit]
+Description=STC private database, media and configuration backup
+Requires=docker.service
+After=docker.service
+ConditionPathExists=/opt/stc/compose.vps.yaml
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+WorkingDirectory=/opt/stc
+UMask=0077
+Nice=10
+TimeoutStartSec=1h
+ExecStart=/usr/bin/python3 /opt/stc/scripts/backup.py --postgres --full --project-name stc --compose-file compose.yaml --compose-file compose.vps.yaml --keep 7
