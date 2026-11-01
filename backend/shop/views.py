@@ -8,6 +8,9 @@ from django.core.mail import send_mail
 from django.db import connection, IntegrityError, transaction
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
+from django.shortcuts import render
+from django.urls import Resolver404, resolve, reverse
+from django.utils.cache import add_never_cache_headers
 from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -25,6 +28,33 @@ User = get_user_model()
 logger = logging.getLogger('shop.accounts')
 
 def csrf_failure(request,reason=''):
+    if request.path_info == '/crm' or request.path_info.startswith('/crm/'):
+        destination, label, kwargs = 'crm:dashboard', 'Revenir à l’accueil', None
+        try:
+            match = resolve(request.path_info)
+        except Resolver404:
+            match = None
+        if match and match.namespace == 'crm':
+            recovery = {
+                'login': ('crm:login', 'Revenir à la connexion'),
+                'product_add': ('crm:product_add', 'Actualiser le formulaire'),
+                'product_edit': ('crm:product_edit', 'Actualiser le formulaire'),
+                'product_availability': ('crm:menu', 'Revenir à ma carte'),
+                'order_status': ('crm:orders', 'Revenir aux commandes'),
+                'restaurant': ('crm:restaurant', 'Actualiser le formulaire'),
+                'closure_add': ('crm:restaurant', 'Revenir à mon restaurant'),
+                'closure_delete': ('crm:restaurant', 'Revenir à mon restaurant'),
+            }
+            destination, label = recovery.get(match.url_name, (destination, label))
+            if destination == 'crm:product_edit':
+                kwargs = {'pk': match.kwargs['pk']}
+        response = render(request, 'shop/crm/csrf_failure.html', {
+            'return_url': reverse(destination, kwargs=kwargs),
+            'return_label': label,
+            'show_login': destination != 'crm:login',
+        }, status=403)
+        add_never_cache_headers(response)
+        return response
     return JsonResponse({'detail':'Session de sécurité expirée. Actualisez la page et réessayez.'},status=403)
 
 def user_data(user):

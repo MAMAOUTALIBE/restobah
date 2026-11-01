@@ -1,0 +1,25 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Formulaire à actualiser · STC</title>
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="stylesheet" href="{% static 'shop/crm.css' %}">
+</head>
+<body class="crm-app crm-login-page">
+  <main class="crm-login-card" aria-labelledby="crm-recovery-title">
+    <a class="crm-brand" href="/" aria-label="STC — Voir le site"><strong>STC<span class="crm-brand-rays" aria-hidden="true">✳</span></strong><span>Mon restaurant</span></a>
+    <span class="crm-eyebrow">FORMULAIRE À ACTUALISER</span>
+    <h1 id="crm-recovery-title">Votre demande n’a pas été enregistrée</h1>
+    <p class="crm-lead">La sécurité du formulaire n’a pas pu être vérifiée. Ouvrez-le à nouveau pour l’actualiser, puis recommencez votre saisie.</p>
+    <nav class="crm-form" aria-label="Reprendre la navigation">
+      <a class="crm-button crm-button-primary crm-button-wide" href="{{ return_url }}">{{ return_label }}</a>
+      {% if show_login %}<a class="crm-button crm-button-outline crm-button-wide" href="{% url 'crm:login' %}">Revenir à la connexion</a>{% endif %}
+    </nav>
+    <a class="crm-back-link" href="/">Retour au site STC</a>
+  </main>
+</body>
+</html>

@@ -101,3 +101,7 @@ Une comparaison d’empreintes ORM avant/après la recette authentifiée locale 
 - Les anciennes photos sont conservées ; leur sauvegarde et leur éventuelle purge relèvent de l’exploitation.
 
 Les repères techniques consultés sont consignés dans [le journal d’exécution](00-execution.md#sources-primaires-consultées), notamment la documentation Django, les recommandations OWASP pour les photos et les règles UX de notification et de validation. La validation finale repose sur les contrôles exécutés ci-dessus.
+
+## Suivi après cette recette locale
+
+Le déploiement ultérieur sur la démonstration existante (`c111967`, puis correction HTTPS `e02cdd0`, le 1er novembre 2026) et les corrections de fiabilité suivantes sont distingués dans [le suivi dédié](11-fiabilite.md). Les preuves ci-dessus restent celles de la recette locale initiale ; elles ne valent pas annonce de déploiement de tout changement ultérieur. Le [guide du gérant](GUIDE_GERANT.md) présente les quatre rubriques et les actions courantes sans les détails techniques d’exploitation.

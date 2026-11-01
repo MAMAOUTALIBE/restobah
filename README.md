@@ -52,7 +52,12 @@ Le nouvel espace `/crm/` reprend la maquette crème, violet et orange avec quatr
 
 Une ancienne base PostgreSQL initialisée avec les identifiants de démonstration peut nécessiter le réalignement des séquences. La commande dédiée `repair_crm_sequences` préserve les données et ne recrée aucun plat : voir [la procédure de maintenance](docs/OPERATIONS.md).
 
-[Bilan CRM du 1er novembre 2026](docs/crm/DELIVERY.md) : équipe de dix spécialistes, fonctionnalités, contrôles exécutés et limites. L’instance locale reste en mode démonstration ; cette livraison ne publie pas la production et n’active pas les paiements réels.
+[Bilan CRM du 1er novembre 2026](docs/crm/DELIVERY.md) : équipe de dix spécialistes, fonctionnalités, contrôles exécutés et limites. Ce rapport conserve les preuves de la livraison locale initiale.
+
+Le CRM a ensuite été mis en ligne sur la **démonstration existante** : [espace gérant STC](https://stc.srv2086522.hstgr.cloud/crm/). Le déploiement du 1er novembre comprend `c111967` et le correctif de redirection HTTPS `e02cdd0`. Les commandes y restent en mode démonstration avec paiement simulé ; aucun paiement commercial n’a été activé.
+
+- [Guide du gérant](docs/crm/GUIDE_GERANT.md) : les quatre rubriques et les gestes courants.
+- [Suivi des corrections de fiabilité](docs/crm/11-fiabilite.md) : reprise d’un formulaire refusé et fiabilité de l’aperçu photo, avec les validations et le statut de livraison propres à chaque correction. Ces corrections plus récentes ne doivent pas être confondues avec le déploiement déjà effectué.
 
 ## Vérifications
 

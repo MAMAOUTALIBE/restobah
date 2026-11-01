@@ -47,8 +47,21 @@
   const preview = app.querySelector('[data-photo-preview]');
   const photoFeedback = app.querySelector('[data-photo-feedback]');
   if (photoInput && preview && photoFeedback) {
+    const savedPreview = [...preview.childNodes].map(node => node.cloneNode(true));
+    const savedPreviewIsEmpty = preview.classList.contains('is-empty');
+    const restorePreview = () => {
+      preview.replaceChildren(...savedPreview.map(node => node.cloneNode(true)));
+      preview.classList.toggle('is-empty', savedPreviewIsEmpty);
+    };
+    let photoRevision = 0;
+    let activeReader = null;
     photoInput.setAttribute('accept', 'image/jpeg,image/png,image/webp');
     photoInput.addEventListener('change', () => {
+      const revision = ++photoRevision;
+      const previousReader = activeReader;
+      activeReader = null;
+      if (previousReader?.readyState === FileReader.LOADING) previousReader.abort();
+      restorePreview();
       const file = photoInput.files?.[0];
       photoFeedback.textContent = '';
       photoFeedback.classList.remove('is-error');
@@ -59,8 +72,22 @@
         return;
       }
       const reader = new FileReader();
+      activeReader = reader;
+      const isCurrent = () => activeReader === reader && photoRevision === revision;
+      const readError = () => {
+        if (!isCurrent()) return;
+        activeReader = null;
+        restorePreview();
+        photoFeedback.textContent = 'La photo ne peut pas être lue. Choisissez un autre fichier.';
+        photoFeedback.classList.add('is-error');
+      };
       reader.addEventListener('load', () => {
-        if (typeof reader.result !== 'string') return;
+        if (!isCurrent()) return;
+        if (typeof reader.result !== 'string') {
+          readError();
+          return;
+        }
+        activeReader = null;
         const image = document.createElement('img');
         image.src = reader.result;
         image.alt = 'Aperçu de la nouvelle photo du plat';
@@ -68,11 +95,12 @@
         preview.classList.remove('is-empty');
         photoFeedback.textContent = 'Nouvelle photo sélectionnée. Enregistrez le plat pour la publier.';
       });
-      reader.addEventListener('error', () => {
-        photoFeedback.textContent = 'La photo ne peut pas être lue. Choisissez un autre fichier.';
-        photoFeedback.classList.add('is-error');
-      });
-      reader.readAsDataURL(file);
+      reader.addEventListener('error', readError);
+      try {
+        reader.readAsDataURL(file);
+      } catch {
+        readError();
+      }
     });
   }
 
