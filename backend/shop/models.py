@@ -34,10 +34,12 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     username = None
     email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=24, blank=True, default='', db_default='')
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
     objects = UserManager()
     class Meta:
+        permissions = [('view_customer', 'Consulter les clients')]
         constraints = [models.UniqueConstraint(Lower('email'),name='unique_user_email_ci')]
     def clean(self):
         super().clean()

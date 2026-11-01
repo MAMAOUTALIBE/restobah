@@ -16,6 +16,7 @@ urlpatterns=[
     path('api/categories/',views.CategoriesView.as_view()),
     path('api/auth/csrf/',views.CsrfView.as_view()),
     path('api/auth/me/',views.MeView.as_view()),
+    path('api/auth/capabilities/',views.AuthCapabilitiesView.as_view()),
     path('api/auth/register/',views.RegisterView.as_view()),
     path('api/auth/login/',views.LoginView.as_view()),
     path('api/auth/logout/',views.LogoutView.as_view()),

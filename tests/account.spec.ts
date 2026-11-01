@@ -5,7 +5,7 @@ test('compte client : inscription, favoris synchronisés et reconnexion',async({
  const email=`stc-browser-${randomUUID()}@example.com`;const password='Stc-Browser!64x9';const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/');await page.getByRole('button',{name:'Ajouter Le Bucket STC aux favoris'}).click();
  await page.getByRole('button',{name:/^(Mon compte|Compte)$/}).click();await page.getByRole('button',{name:'Créer un compte',exact:true}).click();
- await page.getByLabel('Nom complet',{exact:true}).fill('Camille Test');await page.getByLabel('Adresse e-mail',{exact:true}).fill(email);await page.getByLabel('Mot de passe',{exact:true}).fill(password);await page.getByLabel('Confirmer le mot de passe',{exact:true}).fill(password);await page.getByRole('button',{name:'Créer mon compte',exact:true}).click();
+ await page.getByLabel('Nom complet',{exact:true}).fill('Camille Test');await page.getByLabel('Adresse e-mail',{exact:true}).fill(email);await page.getByLabel('Mot de passe',{exact:true}).fill(password);await page.getByRole('button',{name:'Créer mon compte',exact:true}).click();
  await expect(page.getByRole('button',{name:'Se déconnecter',exact:true})).toBeVisible();
  await page.reload();await page.getByRole('button',{name:/^(Mon compte|Compte)$/}).click();await expect(page.getByRole('button',{name:'Se déconnecter',exact:true})).toBeVisible();
  const addresses=page.locator('.address-card');await addresses.getByRole('button',{name:'Ajouter',exact:true}).click();

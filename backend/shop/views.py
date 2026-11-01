@@ -23,8 +23,9 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from .models import Product, Address, Favorite, Order
-from .serializers import AddressSerializer, RegisterSerializer, LoginSerializer, ResetSerializer, ResetConfirmSerializer, OrderInputSerializer, DeleteAccountSerializer
+from .serializers import AddressSerializer, RegisterSerializer, ProfileSerializer, LoginSerializer, ResetSerializer, ResetConfirmSerializer, OrderInputSerializer, DeleteAccountSerializer
 from .services import restaurant_data, categories_data, product_data, order_data, authorized_order, create_order
+from .account_links import password_reset_available, password_reset_link
 
 User = get_user_model()
 logger = logging.getLogger('shop.accounts')
@@ -65,7 +66,7 @@ def csrf_failure(request,reason=''):
     return response
 
 def user_data(user):
-    return {'id':user.id,'name':user.first_name,'email':user.email}
+    return {'id':user.id,'name':user.first_name,'email':user.email,'phone':user.phone}
 
 @method_decorator(never_cache,name='dispatch')
 class PrivateAPIView(APIView):
@@ -106,13 +107,31 @@ class RestaurantView(APIView):
     def get(self,request):
         return Response(restaurant_data())
 
-class MeView(PrivateAPIView):
+class MeView(ProtectedView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
     def get(self,request):
         return Response({'user':user_data(request.user) if request.user.is_authenticated else None})
+
+    def patch(self,request):
+        serializer = ProfileSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        fields = []
+        for key, field in [('name', 'first_name'), ('phone', 'phone')]:
+            if key in serializer.validated_data:
+                setattr(request.user, field, serializer.validated_data[key])
+                fields.append(field)
+        if fields:
+            request.user.save(update_fields=fields)
+        return Response({'user':user_data(request.user)})
 
 class AuthView(ProtectedView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'auth'
+
+class AuthCapabilitiesView(PrivateAPIView):
+    def get(self,request):
+        return Response({'passwordResetAvailable': password_reset_available()})
 
 class RegisterView(AuthView):
     def post(self,request):
@@ -157,8 +176,8 @@ class ResetView(AuthView):
         if user and user.has_usable_password():
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
-            url = f'{settings.FRONTEND_URL}/?reset_uid={uid}&reset_token={token}'
             try:
+                url = password_reset_link(uid, token)
                 send_mail('STC — Réinitialiser votre mot de passe',f'Bonjour,\n\nPour choisir un nouveau mot de passe, ouvrez ce lien valable une heure :\n{url}\n\nSi vous n’êtes pas à l’origine de cette demande, ignorez cet e-mail.\n\nSTC',settings.DEFAULT_FROM_EMAIL,[user.email],fail_silently=False)
             except Exception:
                 # Keep the public response identical, but let the team see SMTP failures.

@@ -76,7 +76,7 @@ def smtp_configured():
     return (settings.EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend'
             and public_host(settings.EMAIL_HOST) and credentials
             and 1 <= settings.EMAIL_PORT <= 65535
-            and bool(settings.EMAIL_USE_TLS or getattr(settings, 'EMAIL_USE_SSL', False))
+            and bool(settings.EMAIL_USE_TLS) != bool(getattr(settings, 'EMAIL_USE_SSL', False))
             and bool(public_email(sender)))
 
 

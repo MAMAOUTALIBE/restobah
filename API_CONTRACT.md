@@ -17,16 +17,27 @@ For `on_site`, creation returns `confirmed`/`due` and schedules one confirmation
 Throttling: `orders` scope applies to order creation (POST) only; history polling uses the general anon/user rates (`ANON_THROTTLE_RATE`, `USER_THROTTLE_RATE`, default 3000/hour).
 
 ## Accounts
-GET `/api/auth/me/` -> `{user:null|{id:number,name:string,email:string}}`.
+GET `/api/auth/me/` -> `{user:null|{id:number,name:string,email:string,phone:string}}`. An unset profile phone is an empty string.
+PATCH `/api/auth/me/` `{name?:string,phone?:string}` -> `{user}` authenticated and CSRF-protected. Partial updates preserve omitted fields; name is 2–100 characters, phone is optional, at most 24 characters and 10–15 digits when provided. Only these two fields are accepted: identity, email and permission changes are rejected. Updating an order contact does not silently update the profile.
 POST `/api/auth/register/` `{name,email,password}` -> `{user}` signed in.
 POST `/api/auth/login/` `{email,password}` -> `{user}`.
 POST `/api/auth/logout/` -> `{detail}`.
-POST `/api/auth/password-reset/` `{email}` -> generic `{detail}`. Dev email to private file (not API output); production configured SMTP. Reset frontend link `/?reset_uid=...&reset_token=...`.
+GET `/api/auth/capabilities/` -> `{passwordResetAvailable:boolean}`, anonymous, private/no-store, no configuration or credentials disclosed. In production, this is true only with a valid configured public frontend origin and authenticated encrypted SMTP configuration. This checks configuration, not actual delivery. The frontend hides the reset submission when unavailable and permits retry after a capability request failure.
+POST `/api/auth/password-reset/` `{email}` -> generic `{detail}`, including unknown accounts and delivery failures. Dev email to private file (not API output); production requires configured SMTP. Reset frontend link `/?reset_uid=...&reset_token=...` uses only the configured `FRONTEND_URL` origin, never a request host. Invalid origins do not generate links. Use `manage.py check_account_delivery --json` for a read-only configuration report; optional `--check-url --smtp-check` probes HTTPS and SMTP authentication without sending mail.
 POST `/api/auth/password-reset-confirm/` `{uid,token,password}` -> `{detail}`.
 POST `/api/auth/delete-account/` `{password}` -> `{detail}` authenticated, `auth` throttle; deletes account, addresses and favourites, logs out; orders are kept and detached; staff accounts refused (400).
 GET/POST `/api/addresses/`; PATCH/DELETE `/api/addresses/{id}/`. Address `{id:number,label,name,phone,address,postal,city}` owner scoped.
 GET `/api/favorites/` -> number[]; PUT `/api/favorites/` `{productIds:number[]}` -> number[] authenticated.
 Django admin `/admin/`: catalog/options, restaurant/hours/closures, orders/transitions/history, payments, customer addresses, promotions.
+
+The customer UI registers with three fields (name, email, password) and allows password visibility. Checkout remains available to guests. Entering login or registration from checkout retains the cart and contact draft in memory and resumes checkout after authentication or "Continuer ma commande sans compte"; contact drafts are not written to browser storage. Profile name/email/phone prefill only empty checkout fields. Account order history is scoped to the authenticated user; guest references stored on the same browser remain visible separately. Matching an email or phone does not attach guest orders to an account. After password reset, local account state is cleared and the previous server session is explicitly closed. If session closure or the initial identity check cannot be verified, order submission and guest continuation are blocked until verification or successful authentication; no personal data is stored to remember that recovery state.
+
+After an ambiguous login/registration response (network, malformed JSON or server failure), the client checks `/auth/me/` and resumes checkout only when the authenticated email matches the submitted email. This proves sign-in, so recovered registration uses a sign-in confirmation rather than claiming new account creation. An unverifiable or mismatched identity keeps checkout blocked. Ambiguous logout checks for an anonymous session. Ambiguous account deletion never repeats deletion and never announces confirmed removal; it checks the session and preserves an explicit notice that deletion was not confirmed.
+
+## CRM customers
+The four main sections remain Accueil, Commandes, Ma carte, Mon restaurant. Under Mon restaurant, `GET /crm/restaurant/clients/` and `/crm/restaurant/clients/{id}/` expose a read-only directory and account-linked order history. Access requires active staff membership, CRM access, `shop.view_customer` and `shop.view_order`. Staff and superuser records are excluded. Search covers name, email and phone, with pagination; phone-shaped searches ignore common separators without changing stored values. Profile phone takes priority; a fallback order phone is labelled with its source. No guest identity is inferred from matching contact details.
+
+"Montant réglé sur place" sums only `payment_method=on_site`, `payment_status=paid`, `demo_mode=false`, non-cancelled orders. Unpaid, refunded, cancelled, demonstration and test Stripe transactions do not count as real receipts. Demo totals are separately labelled in demo mode. Existing staff receive no new permission automatically; the custom permission is created by migration `0007_account_profile`.
 
 ## Division of ownership
 Backend agent owns backend/ exclusively; frontend agent owns src/ exclusively (all React/types/services/styles). Root owns tooling/config/ops/docs/tests integration. Coordinate contract changes via messages before editing outside ownership.

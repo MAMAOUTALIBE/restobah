@@ -6,8 +6,8 @@ import {Header,BottomNavigation,type View} from './components/Navigation';
 import {SearchBar,PromoCarousel,CategoryList,ProductCard} from './components/Catalog';
 import {ProductDetails} from './components/ProductDetails';
 import {OfferBanner} from './components/OfferBanner';
-import {Cart,basketSignature} from './components/Cart';
-import {Account} from './components/Account';
+import {Cart,basketSignature,type CheckoutDraft} from './components/Cart';
+import {Account,type AccountEntryMode,type PasswordResetFeedback} from './components/Account';
 import {Orders} from './components/Orders';
 import {useCart,usePersisted} from './store/useCart';
 import {useFavorites,useSession} from './store/useSession';
@@ -44,16 +44,38 @@ export default function App(){
   const [loadError,setLoadError]=useState('');
   const [selected,setSelected]=useState<Product|null>(null);
   const [cartOpen,setCartOpen]=useState(false);
+  // Checkout coordinates live only in memory during a detour through authentication.
+  const [cartDraft,setCartDraft]=useState<CheckoutDraft|null>(null);
+  const [accountEntry,setAccountEntry]=useState<{mode:AccountEntryMode;returnToCart:boolean}|null>(null);
+  const checkoutReturn=useRef(false);
+  const [resetFeedback,setResetFeedback]=useState<PasswordResetFeedback|null>(null);
   const [references,setReferences]=usePersisted<GuestOrderRef[]>('stc-guest-orders',[],validReferences);
   useEffect(()=>{const linked=linkedReference();if(linked)setReferences(old=>[linked,...old.filter(r=>r.id!==linked.id)].slice(0,50));},[setReferences]);
   const [toast,setToast]=useState<{message:string;showCart:boolean}|null>(null);
   const cart=useCart();
   const session=useSession();
+  const sessionUnverified=session.recoveryRequired||!!session.error;
   const favorites=useFavorites(session.user);
   const cartRef=useRef(cart);
   useEffect(()=>{cartRef.current=cart;},[cart]);
   const closeProduct=useCallback(()=>setSelected(null),[]);
-  const closeCart=useCallback(()=>setCartOpen(false),[]);
+  const closeCart=useCallback(()=>{checkoutReturn.current=false;setCartOpen(false);setCartDraft(null);},[]);
+  const authenticateFromCart=useCallback((mode:AccountEntryMode,draft:CheckoutDraft)=>{
+    checkoutReturn.current=true;setCartDraft(draft);setAccountEntry({mode,returnToCart:true});
+    setCartOpen(false);setSelected(null);setView('Compte');window.scrollTo(0,0);
+  },[]);
+  const resumeCheckout=useCallback(()=>{
+    if(!checkoutReturn.current)return;
+    checkoutReturn.current=false;
+    setAccountEntry(current=>current?{...current,returnToCart:false}:null);setCartOpen(true);
+  },[]);
+  const passwordResetFinished=useCallback((feedback:PasswordResetFeedback)=>{
+    checkoutReturn.current=false;setAccountEntry(null);setCartDraft(null);setResetFeedback(feedback);
+  },[]);
+  const authenticated=useCallback((mode:AccountEntryMode)=>{
+    setAccountEntry(current=>current?{...current,mode:'login'}:null);setResetFeedback(null);setToast({message:mode==='register'?'Votre compte est créé. Bienvenue chez STC !':'Vous êtes connecté.',showCart:false});
+    resumeCheckout();
+  },[resumeCheckout]);
   const reconcile=cart.reconcile;
   const loadGeneration=useRef(0);
   const restaurantActive=useRef(false);
@@ -120,8 +142,8 @@ export default function App(){
     };
   },[loading,reconcile,refreshRestaurant]);
   const navigate=useCallback((next:View)=>{
-    if(next==='Panier'){setCartOpen(true);return;}
-    setView(next);
+    if(next==='Panier'){checkoutReturn.current=false;setAccountEntry(current=>current?{...current,returnToCart:false}:null);setCartOpen(true);return;}
+    checkoutReturn.current=false;setAccountEntry(null);setCartDraft(null);setResetFeedback(null);setView(next);
     if(next==='Accueil'||next==='Carte'){setQuery('');setCategory('Tout');setVeggie(false);}
     window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
   },[]);
@@ -139,8 +161,7 @@ export default function App(){
   const filtered=regular.filter(p=>(category==='Tout'||p.category===category)&&(!veggie||p.vegetarian)&&(view!=='Favoris'||favorites.ids.includes(p.id))&&searchable(`${p.name} ${p.summary||''} ${p.description} ${p.category}`).includes(terms)).sort((a,b)=>sort==='price'?a.price-b.price:sort==='price-desc'?b.price-a.price:0);
   const home=view==='Accueil'&&!query&&category==='Tout';
   const mobileLayout=useMediaQuery('(max-width: 760px)');
-  const tabletLayout=useMediaQuery('(max-width: 1100px)');
-  const homeLimit=mobileLayout?3:tabletLayout?6:4;
+  const homeLimit=mobileLayout?3:6;
   const shown=home&&!veggie?filtered.slice(0,homeLimit):filtered;
   return <>
     <Header count={cart.count} onNavigate={navigate} view={view} settings={settings}/>
@@ -158,12 +179,12 @@ export default function App(){
         </section>
         {(view==='Accueil'||view==='Carte')&&!query&&!loading&&!loadError&&<OfferBanner products={products} filteredProducts={filtered} category={category} vegetarian={veggie} onOrder={setSelected}/>}
         {view==='Accueil'&&!query&&!loading&&!loadError&&<div className="values"><span><ChefHat/><span><strong>Cuisiné sur place</strong><small>Du fait maison, chaque jour.</small></span></span><span><Leaf/><span><strong>Des ingrédients choisis</strong><small>Le bon goût commence ici.</small></span></span><span><ShoppingBag/><span><strong>À votre rythme</strong><small>À emporter ou livré chez vous.</small></span></span></div>}
-      </>:view==='Commandes'?<Orders key={session.user?.id??'guest'} user={session.user} references={references} paymentReturn={paymentReturn} onBrowse={()=>navigate('Carte')} onPaid={onPaid}/>:<Account key={session.user?.id??'guest'} session={session} onNavigate={navigate} favoriteCount={favorites.ids.length} onDeleted={message=>setToast({message,showCart:false})}/>}
+      </>:view==='Commandes'?<Orders key={session.user?.id??'guest'} user={session.user} references={references} paymentReturn={paymentReturn} onBrowse={()=>navigate('Carte')} onPaid={onPaid}/>:<Account key={`${session.user?.id??'guest'}-${accountEntry?.mode??'login'}`} session={session} onNavigate={navigate} favoriteCount={favorites.ids.length} initialMode={accountEntry?.mode} initialCustomer={accountEntry?.returnToCart?cartDraft?.customer:undefined} returnToCheckout={accountEntry?.returnToCart} onAuthenticated={authenticated} resetFeedback={resetFeedback} onPasswordReset={passwordResetFinished} onContinue={accountEntry?.returnToCart?resumeCheckout:undefined} onDeleted={message=>setToast({message,showCart:false})}/>}
     </main>
     <Footer onNavigate={navigate} settings={settings}/>
     <BottomNavigation view={cartOpen?'Panier':view} count={cart.count} onNavigate={navigate}/>
     {selected&&<ProductDetails key={selected.id} product={selected} onClose={closeProduct} onAdd={item=>{cart.add(item);setToast({message:`${item.product.name} ajouté au panier`,showCart:true});}}/>}
-    {cartOpen&&<Cart cart={cart} settings={session.loading?null:settings} refreshSettings={refreshCheckoutSettings} user={session.user} onClose={closeCart} onRegistered={registered} onComplete={order=>{setCartOpen(false);setSelected(null);setView('Commandes');setToast({message:order.demoMode?'Commande de démonstration confirmée !':order.paymentMethod==='on_site'?`Commande confirmée · À régler ${order.mode==='Livraison'?'à la livraison':'au restaurant'}`:'Commande enregistrée !',showCart:false});window.scrollTo(0,0);}}/>}
-    {toast&&<div className="toast" role="status"><Check size={18}/>{toast.message}{toast.showCart&&<button onClick={()=>{setCartOpen(true);setToast(null);}}>Voir le panier</button>}<button aria-label="Fermer la notification" onClick={()=>setToast(null)}>×</button></div>}
+    {cartOpen&&<Cart cart={cart} settings={session.loading||sessionUnverified?null:settings} refreshSettings={refreshCheckoutSettings} user={session.loading||sessionUnverified?null:session.user} initialDraft={cartDraft} sessionRecoveryRequired={sessionUnverified} onAuthenticate={authenticateFromCart} onClose={closeCart} onRegistered={registered} onComplete={order=>{checkoutReturn.current=false;setCartOpen(false);setCartDraft(null);setAccountEntry(null);setSelected(null);setView('Commandes');setToast({message:order.demoMode?'Commande de démonstration confirmée !':order.paymentMethod==='on_site'?`Commande confirmée · À régler ${order.mode==='Livraison'?'à la livraison':'au restaurant'}`:'Commande enregistrée !',showCart:false});window.scrollTo(0,0);}}/>}
+    {toast&&<div className="toast" role="status"><Check size={18}/>{toast.message}{toast.showCart&&<button onClick={()=>{navigate('Panier');setToast(null);}}>Voir le panier</button>}<button aria-label="Fermer la notification" onClick={()=>setToast(null)}>×</button></div>}
   </>;
 }

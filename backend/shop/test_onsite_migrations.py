@@ -21,7 +21,8 @@ class OnSiteMigrationTests(TransactionTestCase):
         Payment = self.apps.get_model('shop', 'Payment')
         Payment.objects.filter(order__payment_status='simulated').delete()
         Order.objects.exclude(payment_status__in=['simulated','pending','paid','failed','cancelled','refunded']).update(payment_status='failed')
-        MigrationExecutor(connection).migrate(self.migrate_to)
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
         super().tearDown()
 
     def old_order(self, index, status, payment):

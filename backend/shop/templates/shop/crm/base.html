@@ -18,7 +18,7 @@
     <a href="{% url 'crm:dashboard' %}" {% if section == 'accueil' %}aria-current="page"{% endif %}>{% include 'shop/crm/icon.html' with name='home' %}<span>Accueil</span></a>
     <a href="{% url 'crm:orders' %}" {% if section == 'commandes' %}aria-current="page"{% endif %}>{% include 'shop/crm/icon.html' with name='orders' %}<span>Commandes</span></a>
     <a href="{% url 'crm:menu' %}" {% if section == 'carte' %}aria-current="page"{% endif %}>{% include 'shop/crm/icon.html' with name='menu' %}<span>Ma carte</span></a>
-    <a href="{% url 'crm:restaurant' %}" {% if section == 'restaurant' %}aria-current="page"{% endif %}>{% include 'shop/crm/icon.html' with name='store' %}<span>Mon restaurant</span></a>
+    <a href="{% if permissions.view_customers and not permissions.view_restaurant %}{% url 'crm:customers' %}{% else %}{% url 'crm:restaurant' %}{% endif %}" {% if section == 'restaurant' %}aria-current="page"{% endif %}>{% include 'shop/crm/icon.html' with name='store' %}<span>Mon restaurant</span></a>
   </nav>
   <div class="crm-sidebar-bottom">
     <details class="crm-help"><summary>{% include 'shop/crm/icon.html' with name='help' %}Besoin d’aide ?</summary><p>Les commandes arrivent dans <strong>Commandes</strong>. Gérez vos plats dans <strong>Ma carte</strong> et vos horaires dans <strong>Mon restaurant</strong>.</p></details>

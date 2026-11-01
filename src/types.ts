@@ -32,7 +32,7 @@ export interface Order {
   customer?:Customer;
 }
 export interface GuestOrderRef {id:string;accessToken:string}
-export interface User {id:number;name:string;email:string}
+export interface User {id:number;name:string;email:string;phone?:string}
 export interface Customer {name:string;email:string;phone:string;address?:string;postal?:string;city?:string;note?:string}
 export interface Address {id:number;label:string;name:string;phone:string;address:string;postal:string;city:string}
 export interface OrderPayload {

@@ -11,7 +11,8 @@ from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
-from django.db.models import Q, Sum
+from django.db.models import Count, F, Max, Q, Sum, Value
+from django.db.models.functions import Replace
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -25,7 +26,7 @@ from .crm_forms import (
     RestaurantForm, StaffLoginForm, has_crm_access, product_fingerprint,
     product_revision, revision_matches,
 )
-from .models import Category, Closure, Order, Product, Restaurant
+from .models import Category, Closure, Order, Product, Restaurant, User
 from .payments import release_checkout
 from .onsite_payments import record_payment
 from .services import product_data
@@ -49,6 +50,7 @@ def _permissions(user):
         'record_onsite_payment': allowed('shop.view_order', 'shop.change_order', 'shop.record_onsite_payment'),
         'view_restaurant': allowed('shop.view_restaurant'),
         'change_restaurant': allowed('shop.view_restaurant', 'shop.change_restaurant'),
+        'view_customers': allowed('shop.view_customer', 'shop.view_order'),
     }
 
 
@@ -168,7 +170,7 @@ def _dashboard_context(request):
         stats['today_total'] = today.filter(payment_status__in=['paid', 'simulated']).exclude(status='cancelled') \
             .aggregate(amount=Sum('total'))['amount'] or Decimal('0.00')
         recent = [_decorate_order(order, context['permissions']['change_orders'])
-                  for order in orders.prefetch_related('lines', 'history', 'onsite_events__actor')[:6]]
+                  for order in orders.select_related('user').prefetch_related('lines', 'history', 'onsite_events__actor')[:6]]
     if context['permissions']['view_products']:
         stats['unavailable_products'] = sum(not product_data(product)['available'] for product in _products())
     context.update(stats=stats, recent_orders=recent)
@@ -199,7 +201,7 @@ def _orders_page(request):
     query = source.get('return_q' if request.method == 'POST' else 'q', '')[:140].strip()
     number = source.get('return_page' if request.method == 'POST' else 'page', '1')[:20]
     number = int(number) if number.isascii() and number.isdecimal() else 1
-    orders = Order.objects.prefetch_related('lines', 'history', 'onsite_events__actor')
+    orders = Order.objects.select_related('user').prefetch_related('lines', 'history', 'onsite_events__actor')
     if selected == 'active':
         orders = orders.filter(status__in=['pending_payment', 'confirmed', 'preparing', 'ready'])
     elif selected == 'history':
@@ -387,8 +389,83 @@ def _restaurant_context(request, restaurant, form=None, opening_formset=None, cl
         opening_formset=opening_formset if opening_formset is not None else OpeningFormSet(instance=restaurant, prefix='hours'),
         closure_form=closure_form if closure_form is not None else ClosureForm(restaurant=restaurant),
         closures=Closure.objects.filter(restaurant_id=restaurant.pk, date__gte=timezone.localdate()).order_by('date'),
+        restaurant_tab='settings',
     )
     return context
+
+
+def _customers():
+    # Only the authenticated account link identifies a customer's orders. An
+    # unverified e-mail or telephone must never attach a guest's order to them.
+    settled = Q(order__payment_status='paid', order__payment_method='on_site', order__demo_mode=False) \
+        & ~Q(order__status='cancelled')
+    simulated = (Q(order__payment_status='simulated')
+                 | Q(order__demo_mode=True, order__payment_status='paid')
+                 | Q(order__payment_method='stripe', order__payment_status='paid')) \
+        & ~Q(order__status='cancelled')
+    return User.objects.filter(is_staff=False, is_superuser=False).annotate(
+        crm_order_count=Count('order'),
+        crm_last_order_at=Max('order__date'),
+        crm_paid_total=Sum('order__total', filter=settled, default=Decimal('0.00')),
+        crm_simulated_total=Sum('order__total', filter=simulated, default=Decimal('0.00')),
+    ).order_by('first_name', 'last_name', 'pk')
+
+
+def _customer_page_number(value):
+    value = value[:20]
+    return max(int(value), 1) if value.isascii() and value.isdecimal() else 1
+
+
+PHONE_SEARCH_SEPARATORS = ' -().+\u00a0\u202f'
+
+
+@crm_required('shop.view_customer', 'shop.view_order')
+@require_GET
+def customers(request):
+    context = _base(request, 'restaurant')
+    query = request.GET.get('q', '')[:140].strip()
+    accounts = _customers()
+    if query:
+        matches = Q(first_name__icontains=query) | Q(last_name__icontains=query) \
+            | Q(email__icontains=query) | Q(phone__icontains=query)
+        compact_phone = ''.join(character for character in query if character not in PHONE_SEARCH_SEPARATORS)
+        # Normalize phone-shaped searches only: extracting digits from a name or
+        # e-mail would incorrectly broaden that search to unrelated customers.
+        if compact_phone.isascii() and compact_phone.isdecimal():
+            phone_expression = F('phone')
+            for separator in PHONE_SEARCH_SEPARATORS:
+                phone_expression = Replace(phone_expression, Value(separator), Value(''))
+            accounts = accounts.alias(crm_search_phone=phone_expression)
+            matches |= Q(crm_search_phone__contains=compact_phone)
+        accounts = accounts.filter(matches)
+    page = Paginator(accounts, 20).get_page(_customer_page_number(request.GET.get('page', '1')))
+    context.update(customers=page, page_obj=page, q=query, restaurant_tab='customers')
+    return render(request, 'shop/crm/customers.html', context)
+
+
+@crm_required('shop.view_customer', 'shop.view_order')
+@require_GET
+def customer_detail(request, pk):
+    account = _customers().filter(pk=pk).first()
+    if account is None:
+        return render(request, 'shop/crm/customer_not_found.html', _base(request, 'restaurant'), status=404)
+    linked_orders = Order.objects.filter(user_id=account.pk).order_by('-date', '-pk')
+    latest = linked_orders.first()
+    snapshot = latest.customer if latest and isinstance(latest.customer, dict) else {}
+    order_phone = snapshot.get('phone', '')
+    order_phone = order_phone.strip()[:24] if isinstance(order_phone, str) else ''
+    query = request.GET.get('q', '')[:140].strip()
+    customer_page = _customer_page_number(request.GET.get('customer_page', '1'))
+    page = Paginator(linked_orders, 20).get_page(_customer_page_number(request.GET.get('page', '1')))
+    context = _base(request, 'restaurant')
+    context.update(
+        customer_account=account, customer_phone=account.phone or order_phone,
+        phone_from_order=not account.phone and bool(order_phone), phone_order=latest,
+        customer_orders=page, page_obj=page, q=query, customer_page=customer_page,
+        customer_list_url=f'{reverse("crm:customers")}?{urlencode({"q": query, "page": customer_page})}',
+        restaurant_tab='customers',
+    )
+    return render(request, 'shop/crm/customer_detail.html', context)
 
 
 @crm_required('shop.view_restaurant')

@@ -22,7 +22,7 @@ test('les refus du serveur sont affichés tels quels, panier conservé',async({p
 
 test('mot de passe refusé : la raison est indiquée',async({page})=>{
  await page.goto('/');await page.getByRole('button',{name:/^(Mon compte|Compte)$/}).click();await page.getByRole('button',{name:'Créer un compte',exact:true}).click();
- await page.getByLabel('Nom complet',{exact:true}).fill('Camille Test');await page.getByLabel('Adresse e-mail',{exact:true}).fill(`stc-weak-${randomUUID()}@example.com`);await page.getByLabel('Mot de passe',{exact:true}).fill('motdepasse');await page.getByLabel('Confirmer le mot de passe',{exact:true}).fill('motdepasse');await page.getByRole('button',{name:'Créer mon compte',exact:true}).click();
+ await page.getByLabel('Nom complet',{exact:true}).fill('Camille Test');await page.getByLabel('Adresse e-mail',{exact:true}).fill(`stc-weak-${randomUUID()}@example.com`);await page.getByLabel('Mot de passe',{exact:true}).fill('motdepasse');await page.getByRole('button',{name:'Créer mon compte',exact:true}).click();
  await expect(page.getByRole('alert')).toContainText('Mot de passe : Ce mot de passe est trop courant.');
 });
 
@@ -63,14 +63,14 @@ test('après connexion, les commandes invitées de l’appareil restent visibles
  await page.goto('/');const order=await guestOrder(page);
  await page.evaluate(ref=>localStorage.setItem('stc-guest-orders',JSON.stringify([ref])),{id:order.id,accessToken:order.accessToken});await page.reload();
  await page.getByRole('button',{name:/^(Mon compte|Compte)$/}).click();await page.getByRole('button',{name:'Créer un compte',exact:true}).click();
- const password='Stc-Guest!58x2';await page.getByLabel('Nom complet',{exact:true}).fill('Camille Invitée');await page.getByLabel('Adresse e-mail',{exact:true}).fill(`stc-guest-${randomUUID()}@example.com`);await page.getByLabel('Mot de passe',{exact:true}).fill(password);await page.getByLabel('Confirmer le mot de passe',{exact:true}).fill(password);await page.getByRole('button',{name:'Créer mon compte',exact:true}).click();
+ const password='Stc-Guest!58x2';await page.getByLabel('Nom complet',{exact:true}).fill('Camille Invitée');await page.getByLabel('Adresse e-mail',{exact:true}).fill(`stc-guest-${randomUUID()}@example.com`);await page.getByLabel('Mot de passe',{exact:true}).fill(password);await page.getByRole('button',{name:'Créer mon compte',exact:true}).click();
  await expect(page.getByRole('button',{name:'Se déconnecter',exact:true})).toBeVisible();await page.locator('.account-card').getByRole('button',{name:'Mes commandes'}).click();
  await expect(page.getByRole('heading',{name:`Commande ${order.id}`,exact:true})).toBeVisible();
 });
 
 test('suppression du compte : mot de passe exigé, puis retour à la connexion',async({page})=>{
  const password='Stc-Delete!47x3';await page.goto('/');await page.getByRole('button',{name:/^(Mon compte|Compte)$/}).click();await page.getByRole('button',{name:'Créer un compte',exact:true}).click();
- await page.getByLabel('Nom complet',{exact:true}).fill('Camille Départ');await page.getByLabel('Adresse e-mail',{exact:true}).fill(`stc-delete-${randomUUID()}@example.com`);await page.getByLabel('Mot de passe',{exact:true}).fill(password);await page.getByLabel('Confirmer le mot de passe',{exact:true}).fill(password);await page.getByRole('button',{name:'Créer mon compte',exact:true}).click();
+ await page.getByLabel('Nom complet',{exact:true}).fill('Camille Départ');await page.getByLabel('Adresse e-mail',{exact:true}).fill(`stc-delete-${randomUUID()}@example.com`);await page.getByLabel('Mot de passe',{exact:true}).fill(password);await page.getByRole('button',{name:'Créer mon compte',exact:true}).click();
  const card=page.locator('.delete-card');await card.getByRole('button',{name:'Supprimer',exact:true}).click();
  await card.getByLabel('Mot de passe actuel').fill('mauvais-mot-de-passe');await card.getByRole('button',{name:'Supprimer définitivement mon compte'}).click();await expect(card.getByRole('alert')).toHaveText('Mot de passe : Mot de passe incorrect.');
  await card.getByLabel('Mot de passe actuel').fill(password);await card.getByRole('button',{name:'Supprimer définitivement mon compte'}).click();

@@ -1,0 +1,20 @@
+{% extends 'shop/crm/base.html' %}{% block title %}Clients{% endblock %}{% block content %}
+<div class="crm-page-heading"><div><h1>Clients</h1><p>Retrouvez un compte et ses commandes.</p></div></div>
+{% include 'shop/crm/partials/restaurant_navigation.html' %}
+<form method="get" class="crm-filter-bar" role="search" aria-label="Rechercher un client">
+  <label class="crm-search-label" for="crm-customer-query">{% include 'shop/crm/icon.html' with name='search' %}<input id="crm-customer-query" name="q" value="{{ q }}" maxlength="140" placeholder="Nom, e-mail ou téléphone" aria-label="Nom, e-mail ou téléphone du client"></label>
+  <button class="crm-button crm-button-outline" type="submit">Rechercher</button>{% if q %}<a class="crm-text-button" href="{% url 'crm:customers' %}">Effacer</a>{% endif %}
+</form>
+<p class="crm-customer-count" role="status">{{ page_obj.paginator.count }} compte{{ page_obj.paginator.count|pluralize }}{% if q %} correspondant{{ page_obj.paginator.count|pluralize }} à votre recherche{% endif %}</p>
+<div class="crm-customer-list">
+  {% for customer in customers %}
+  <article class="crm-customer-card crm-panel" data-customer-id="{{ customer.pk }}">
+    <div class="crm-customer-identity"><span class="crm-customer-avatar" aria-hidden="true">{% include 'shop/crm/icon.html' with name='user' %}</span><div><h2><a href="{% url 'crm:customer_detail' customer.pk %}?q={{ q|urlencode }}&amp;customer_page={{ page_obj.number }}">{{ customer.get_full_name|default:'Client' }}</a></h2><p>{{ customer.email }}</p>{% if customer.phone %}<p>{{ customer.phone }}</p>{% endif %}{% if not customer.is_active %}<span class="crm-customer-inactive">Compte désactivé</span>{% endif %}</div></div>
+    <dl class="crm-customer-figures"><div><dt>Commandes</dt><dd>{{ customer.crm_order_count }}</dd></div><div><dt>Dernière commande</dt><dd>{% if customer.crm_last_order_at %}<time datetime="{{ customer.crm_last_order_at|date:'c' }}">{{ customer.crm_last_order_at|date:'d/m/Y' }}</time>{% else %}Aucune{% endif %}</dd></div><div><dt>Réglé sur place</dt><dd>{{ customer.crm_paid_total|floatformat:2 }} €</dd>{% if demo_mode and customer.crm_simulated_total %}<dd class="crm-customer-simulation">Simulation et test : {{ customer.crm_simulated_total|floatformat:2 }} €</dd>{% endif %}</div></dl>
+    <a class="crm-button crm-button-outline" href="{% url 'crm:customer_detail' customer.pk %}?q={{ q|urlencode }}&amp;customer_page={{ page_obj.number }}" aria-label="Voir la fiche de {{ customer.get_full_name|default:customer.email }}">Voir la fiche {% include 'shop/crm/icon.html' with name='arrow' %}</a>
+  </article>
+  {% empty %}<section class="crm-empty crm-panel"><span class="crm-empty-icon">{% include 'shop/crm/icon.html' with name='user' %}</span><h2>{% if q %}Aucun compte ne correspond.{% else %}Pas encore de compte client.{% endif %}</h2><p>{% if q %}Essayez un nom, une adresse e-mail ou un téléphone.{% else %}Les comptes créés sur votre site apparaîtront ici.{% endif %}</p>{% if q %}<a class="crm-button crm-button-outline" href="{% url 'crm:customers' %}">Voir tous les clients</a>{% endif %}</section>{% endfor %}
+</div>
+{% if page_obj.has_other_pages %}<nav class="crm-pagination" aria-label="Pages des clients">{% if page_obj.has_previous %}<a class="crm-button crm-button-outline" href="?q={{ q|urlencode }}&amp;page={{ page_obj.previous_page_number }}">Précédents</a>{% endif %}<span>Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a class="crm-button crm-button-outline" href="?q={{ q|urlencode }}&amp;page={{ page_obj.next_page_number }}">Suivants</a>{% endif %}</nav>{% endif %}
+<p class="crm-page-note">{% include 'shop/crm/icon.html' with name='info' %}<span>Les commandes sans compte restent dans <a class="crm-inline-link" href="{% url 'crm:orders' %}?status=all">Commandes</a>. Elles ne sont pas rattachées par e-mail ou téléphone.</span></p>
+{% endblock %}

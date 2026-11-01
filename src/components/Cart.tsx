@@ -7,6 +7,7 @@ import {checkedItem,type CartState} from '../store/useCart';
 import {ApiError,messageOf,restaurantApi} from '../services/api';
 import {forgetCheckoutForOrder,redirectToPayment} from '../services/payment';
 
+export interface CheckoutDraft {mode:'À emporter'|'Livraison';checkout:boolean;customer:Customer}
 const emptyCustomer:Customer={name:'',email:'',phone:'',address:'',postal:'',city:'',note:''};
 export const basketSignature=(cart:Pick<CartState,'items'>)=>JSON.stringify(cart.items.map(i=>({id:i.product.id,quantity:i.quantity,choices:[...i.choices].sort()})).sort((a,b)=>`${a.id}${a.choices}`.localeCompare(`${b.id}${b.choices}`)));
 export function rememberPaymentBasket(orderId:string,cart:Pick<CartState,'items'>){try{sessionStorage.setItem('stc-payment-cart',JSON.stringify({id:orderId,signature:basketSignature(cart)}));}catch{/* payment still works without recovery */}}
@@ -16,12 +17,15 @@ async function requestKey(payload:OrderPayload){
   try{const saved=JSON.parse(sessionStorage.getItem('stc-checkout-key')||'null') as {fingerprint?:string;key?:string}|null;if(saved?.fingerprint===fingerprint&&typeof saved.key==='string')return saved.key;}catch{/* create a new key */}
   const key=crypto.randomUUID();try{sessionStorage.setItem('stc-checkout-key',JSON.stringify({fingerprint,key}));}catch{/* key retained in mounted form */}return key;
 }
-export function Cart({cart,settings,refreshSettings,user,onClose,onRegistered,onComplete}:{cart:CartState;settings:RestaurantSettings|null;refreshSettings:()=>Promise<RestaurantSettings>;user:User|null;onClose:()=>void;onRegistered:(o:Order)=>void;onComplete:(o:Order)=>void}){
-  const [mode,setMode]=useState<'À emporter'|'Livraison'>(settings?.pickupEnabled===false&&settings.deliveryEnabled!==false?'Livraison':'À emporter');
-  const [checkout,setCheckout]=useState(false);
+export function Cart({cart,settings,refreshSettings,user,initialDraft,sessionRecoveryRequired=false,onAuthenticate,onClose,onRegistered,onComplete}:{cart:CartState;settings:RestaurantSettings|null;refreshSettings:()=>Promise<RestaurantSettings>;user:User|null;initialDraft?:CheckoutDraft|null;sessionRecoveryRequired?:boolean;onAuthenticate:(mode:'login'|'register',draft:CheckoutDraft)=>void;onClose:()=>void;onRegistered:(o:Order)=>void;onComplete:(o:Order)=>void}){
+  const [mode,setMode]=useState<'À emporter'|'Livraison'>(initialDraft?.mode??(settings?.pickupEnabled===false&&settings.deliveryEnabled!==false?'Livraison':'À emporter'));
+  const [checkout,setCheckout]=useState(initialDraft?.checkout??false);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
-  const [customer,setCustomer]=useState<Customer>({...emptyCustomer,name:user?.name||'',email:user?.email||''});
+  const [customer,setCustomer]=useState<Customer>(()=>{
+    const draft={...emptyCustomer,...initialDraft?.customer};
+    return {...draft,name:draft.name||user?.name||'',email:draft.email||user?.email||'',phone:draft.phone||user?.phone||''};
+  });
   const [addresses,setAddresses]=useState<Address[]>([]);
   const [addressesError,setAddressesError]=useState('');
   const [pendingOrder,setPendingOrder]=useState<Order|null>(null);
@@ -30,10 +34,13 @@ export function Cart({cart,settings,refreshSettings,user,onClose,onRegistered,on
   const actualSettings=settings;
   const delivery=mode==='Livraison'?(actualSettings?.deliveryFee??0):0;
   const total=money(cart.total+delivery);
-  const enabled=!!actualSettings&&actualSettings.orderingEnabled&&actualSettings.isOpen;
+  const enabled=!sessionRecoveryRequired&&!!actualSettings&&actualSettings.orderingEnabled&&actualSettings.isOpen;
   const paymentMode=pendingOrder?'stripe':actualSettings?.paymentMode;
   const paymentPlace=mode==='Livraison'?'à la livraison':'au restaurant';
   useEffect(()=>{let alive=true;if(!user)return;restaurantApi.getAddresses().then(data=>{if(alive)setAddresses(data);}).catch(err=>{if(alive)setAddressesError(messageOf(err));});return()=>{alive=false;};},[user?.id]);
+  useEffect(()=>{
+    if(user)setCustomer(old=>({...old,name:old.name||user.name,email:old.email||user.email,phone:old.phone||user.phone||''}));
+  },[user?.id,user?.name,user?.email,user?.phone]);
   function field(name:keyof Customer,value:string){setCustomer(old=>({...old,[name]:value}));setError('');}
   async function pay(order:Order){
     rememberPaymentBasket(order.id,cart);
@@ -55,6 +62,7 @@ export function Cart({cart,settings,refreshSettings,user,onClose,onRegistered,on
   }
   async function submit(){
     if(submission.current)return;
+    if(sessionRecoveryRequired){setError('Vérifiez votre compte avant de commander.');return;}
     if((mode==='Livraison'&&actualSettings?.deliveryEnabled===false)||(mode==='À emporter'&&actualSettings?.pickupEnabled===false)){setError('Ce mode de commande est temporairement indisponible. Choisissez un autre mode.');return;}
     if(!enabled){setError('Les commandes sont actuellement fermées. Réessayez pendant les horaires d’ouverture.');return;}
     if(!customer.name.trim()||!customer.phone.trim()||!customer.email.trim()){setError('Veuillez renseigner vos coordonnées.');return;}
@@ -86,20 +94,22 @@ export function Cart({cart,settings,refreshSettings,user,onClose,onRegistered,on
       {cart.notice&&<div className="notice" role="status">{cart.notice}<button className="text-button" onClick={cart.dismissNotice}>Compris</button></div>}
       <div className="mode-switch">{[{name:'À emporter',icon:Store},{name:'Livraison',icon:Truck}].map(({name,icon:Icon})=><button disabled={busy||!!pendingOrder||(name==='Livraison'&&actualSettings?.deliveryEnabled===false)||(name==='À emporter'&&actualSettings?.pickupEnabled===false)} className={mode===name?'active':''} key={name} onClick={()=>{setMode(name as typeof mode);setError('');}}><Icon size={17}/>{name}</button>)}</div>
       <p className="muted delivery-note">{mode==='À emporter'?`Prêt dans ${actualSettings?.pickupDelay||'quelques minutes'} · ${actualSettings?.address||'Au restaurant'}`:`Livraison · ${actualSettings?.deliveryDelay||'selon la zone'}${actualSettings?.deliveryPostalCodes.length?` · ${actualSettings.deliveryPostalCodes.join(', ')}`:''}`}</p>
-      {!enabled&&<p className="notice" role="status">{actualSettings?'Le restaurant ne prend pas de commandes pour le moment.':'Connexion au restaurant en cours. Le panier reste disponible.'}</p>}
+      {sessionRecoveryRequired?<div className="notice" role="alert">Votre session doit être vérifiée avant de commander. Réessayez ou connectez-vous.<button type="button" className="text-button" onClick={()=>onAuthenticate('login',{mode,checkout,customer})}>Vérifier mon compte</button></div>:!enabled&&<p className="notice" role="status">{actualSettings?'Le restaurant ne prend pas de commandes pour le moment.':'Connexion au restaurant en cours. Le panier reste disponible.'}</p>}
+      <div className="cart-summary">
       <div className="cart-items">{cart.items.map(i=><div className={`cart-item ${i.issue?'cart-item-invalid':''}`} key={i.key}><FoodImage image={i.product.image}/><div><h3>{i.product.name}</h3><p>{i.choiceNames.join(' · ')||'Recette originale'}</p>{i.issue&&<p className="error">{i.issue}</p>}<strong>{euro(i.unitPrice*i.quantity)}</strong><div className="quantity"><button disabled={busy||!!pendingOrder} aria-label={`Réduire ${i.product.name}`} onClick={()=>cart.update(i.key,-1)}><Minus size={14}/></button><span>{i.quantity}</span><button disabled={busy||!!pendingOrder||i.quantity>=20} aria-label={`Augmenter ${i.product.name}`} onClick={()=>cart.update(i.key,1)}><Plus size={14}/></button></div></div><button className="remove" disabled={busy||!!pendingOrder} aria-label={`Supprimer ${i.product.name}`} onClick={()=>cart.remove(i.key)}><Trash2 size={17}/></button></div>)}</div>
       <div className="totals"><p><span>Sous-total</span><span>{euro(cart.total)}</span></p><p><span>{mode==='Livraison'?'Livraison':'Retrait au restaurant'}</span><span>{delivery?euro(delivery):'Offert'}</span></p><p className="total"><strong>Total TTC</strong><strong>{euro(total)}</strong></p></div>
+      </div>
       {!checkout?<button className="primary full" disabled={!enabled||cart.hasIssues} onClick={()=>setCheckout(true)}>Passer commande <ArrowRight size={18}/></button>:<form className="checkout" onSubmit={e=>{e.preventDefault();void submit();}}><h3>Vos coordonnées</h3>
-        {!user&&<p className="muted">Commande invitée · Aucun compte nécessaire.</p>}
+        {!user&&<div className="checkout-account-choice"><p className="muted">Commande invitée · Aucun compte nécessaire.</p><div><button type="button" disabled={busy||!!pendingOrder} onClick={()=>onAuthenticate('login',{mode,checkout,customer})}>Déjà client ? Me connecter</button><button type="button" disabled={busy||!!pendingOrder} onClick={()=>onAuthenticate('register',{mode,checkout,customer})}>Créer un compte</button></div></div>}
         {pendingOrder&&<p className="notice" role="status">La commande {pendingOrder.id} est enregistrée, en attente de paiement. Vous pouvez reprendre son paiement ici ou dans « Commandes ».</p>}
         <fieldset className="checkout-fields" disabled={busy||!!pendingOrder}>
-          {mode==='Livraison'&&addresses.length>0&&<label>Utiliser une adresse enregistrée<select defaultValue="" onChange={e=>{const found=addresses.find(a=>a.id===Number(e.target.value));if(found)setCustomer(old=>({...old,name:found.name,phone:found.phone,address:found.address,postal:found.postal,city:found.city}));}}><option value="">Saisir une adresse</option>{addresses.map(a=><option value={a.id} key={a.id}>{a.label} — {a.postal} {a.city}</option>)}</select></label>}
+          {mode==='Livraison'&&addresses.length>0&&<><label htmlFor="checkout-address">Utiliser une adresse enregistrée</label><select id="checkout-address" defaultValue="" onChange={e=>{const found=addresses.find(a=>a.id===Number(e.target.value));if(found)setCustomer(old=>({...old,name:found.name,phone:found.phone,address:found.address,postal:found.postal,city:found.city}));}}><option value="">Saisir une adresse</option>{addresses.map(a=><option value={a.id} key={a.id}>{a.label} — {a.postal} {a.city}</option>)}</select></>}
           {addressesError&&<p className="muted">Les adresses enregistrées ne sont pas accessibles. Vous pouvez saisir votre adresse ci-dessous.</p>}
           <label>Nom complet<input name="name" autoComplete="name" minLength={2} maxLength={100} required placeholder="Camille Martin" value={customer.name} onChange={e=>field('name',e.target.value)}/></label>
           <label>Adresse e-mail<input type="email" name="email" autoComplete="email" maxLength={254} required placeholder="camille@exemple.fr" value={customer.email} onChange={e=>field('email',e.target.value)}/></label>
-          <label>Téléphone<input type="tel" name="phone" autoComplete="tel" pattern={String.raw`[+0-9 .\(\)\-]{10,18}`} required placeholder="06 12 34 56 78" value={customer.phone} onChange={e=>field('phone',e.target.value)}/></label>
+          <label>Téléphone<input type="tel" name="phone" autoComplete="tel" maxLength={25} pattern={String.raw`[+0-9 .\(\)\-]{10,25}`} required placeholder="06 12 34 56 78" value={customer.phone} onChange={e=>field('phone',e.target.value)}/></label>
           {mode==='Livraison'&&<><label>Adresse de livraison<input required name="address" maxLength={200} autoComplete="street-address" placeholder="Numéro et rue" value={customer.address} onChange={e=>field('address',e.target.value)}/></label><div className="form-row"><label>Code postal<input name="postal" required pattern="[0-9]{5}" inputMode="numeric" autoComplete="postal-code" placeholder="75011" value={customer.postal} onChange={e=>field('postal',e.target.value)}/></label><label>Ville<input name="city" autoComplete="address-level2" required maxLength={100} placeholder="Paris" value={customer.city} onChange={e=>field('city',e.target.value)}/></label></div></>}
-          <label>Une précision ?<textarea name="note" maxLength={1000} placeholder="Instructions pour votre commande (facultatif)" value={customer.note} onChange={e=>field('note',e.target.value)}/></label>
+          <label htmlFor="checkout-note">Une précision ?</label><textarea id="checkout-note" name="note" maxLength={1000} placeholder="Instructions pour votre commande (facultatif)" value={customer.note} onChange={e=>field('note',e.target.value)}/>
         </fieldset>
         {error&&<p className="error" role="alert">{error}</p>}
         <button disabled={busy||!enabled||cart.hasIssues} className="primary full" type="submit">{paymentMode==='stripe'&&<CreditCard size={16}/>} {busy?'Validation en cours…':pendingOrder?'Réessayer le paiement test':paymentMode==='stripe'?'Continuer vers le paiement test':paymentMode==='on_site'?`Commander et régler ${paymentPlace}`:'Valider la commande de démonstration'}</button>

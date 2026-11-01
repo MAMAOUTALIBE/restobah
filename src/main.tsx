@@ -6,3 +6,5 @@ import "./stc.css";
 import "./responsive.css";
 
 import './button-effects.css';
+
+import './desktop.css';

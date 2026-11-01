@@ -22,6 +22,7 @@ CRM_PERMISSIONS = (
     'shop.view_product', 'shop.add_product', 'shop.change_product',
     'shop.view_order', 'shop.change_order',
     'shop.view_restaurant', 'shop.change_restaurant',
+    'shop.view_customer',
 )
 MAX_PHOTO_BYTES = 5 * 1024 * 1024
 MAX_PHOTO_SIDE = 6000

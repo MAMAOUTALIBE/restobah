@@ -1,0 +1,16 @@
+/* Account and checkout helpers follow the site's cream, violet and orange palette. */
+.account-page .account-password label{margin-bottom:7px}
+.account-password-control{display:flex;align-items:stretch;border:1px solid #ded7cb;border-radius:8px;background:#fff;overflow:hidden}
+.account-page .account-password-control input{min-width:0;width:100%;flex:1;border:0;border-radius:0;margin:0}
+.account-password-control:focus-within{outline:2px solid var(--violet);outline-offset:2px}
+.account-password-control button{display:flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;min-height:44px;padding:0 13px;color:var(--violet);font-size:12px;background:#f5edf7;box-shadow:none;border-radius:0}
+.account-password-control button:focus-visible{outline:2px solid var(--violet);outline-offset:-3px}
+.account-page .profile-card>.muted{font-size:12px;line-height:1.6;margin-bottom:17px}
+.account-page .profile-form input[readonly]{background:#f4eee5;color:#786d61}
+.auth-cart-return{padding:12px 14px;background:#f3e9f7;color:var(--violet);border-radius:10px;font-size:12px;line-height:1.6;margin:12px 0}
+.checkout-account-choice{margin:12px 0 18px;padding:14px;border:1px solid #e9dcca;border-radius:12px;background:#fff8ee}
+.checkout-account-choice>.muted{font-size:12px;line-height:1.6;margin:0 0 8px}
+.checkout-account-choice>div{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap}
+.checkout-account-choice button{min-height:44px;font-size:12px;line-height:1.4;color:var(--violet);font-weight:650;text-align:left;text-decoration:underline;text-underline-offset:4px;box-shadow:none;background:transparent;border-radius:6px;padding:5px 0}
+.checkout-account-choice button:focus-visible{outline:2px solid var(--violet);outline-offset:4px}
+@media(max-width:760px){.account-page .profile-form .primary{width:100%;justify-content:center}.account-password-control button{padding:0 10px}.checkout-account-choice{padding:11px 12px}.checkout-account-choice button{font-size:12px}.account-page .auth-cart-return{font-size:12px}}

@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 test('parcours de commande complet, persistance et responsive',async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/');await expect(page.getByRole('heading',{name:'Nos menus populaires'})).toBeVisible();
- await expect(page.locator('.product-card')).toHaveCount((page.viewportSize()?.width??1280)<=760?3:(page.viewportSize()?.width??1280)<=1100?6:4);
+ await expect(page.locator('.product-card')).toHaveCount((page.viewportSize()?.width??1280)<=760?3:6);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.getByRole('textbox',{name:'Rechercher un plat'}).fill('introuvable');await expect(page.getByText('Aucun plat pour cette recherche.')).toBeVisible();
  await page.getByRole('textbox',{name:'Rechercher un plat'}).fill('Burger poulet');await expect(page.locator('.product-card')).toHaveCount(1);
@@ -49,7 +49,7 @@ test('une erreur de commande conserve le panier et permet une nouvelle tentative
 });
 
 test('navigation compacte, footer fonctionnel et absence de débordement',async({page},testInfo)=>{
- await page.goto('/');await expect(page.locator('.product-card')).toHaveCount((page.viewportSize()?.width??1280)<=760?3:(page.viewportSize()?.width??1280)<=1100?6:4);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.goto('/');await expect(page.locator('.product-card')).toHaveCount((page.viewportSize()?.width??1280)<=760?3:6);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  if(testInfo.project.name==='mobile'){expect(await page.locator('.bottom-nav').evaluate(el=>el.getBoundingClientRect().height)).toBeLessThanOrEqual(44);expect(await page.locator('.bottom-nav .nav-cart').evaluate(el=>el.getBoundingClientRect().height)).toBeLessThanOrEqual(44);}
  const footer=page.getByRole('contentinfo',{name:'Informations STC'});await footer.scrollIntoViewIfNeeded();await expect(footer).toBeVisible();expect(await footer.evaluate(el=>el.getBoundingClientRect().height)).toBeLessThan(230);await page.screenshot({path:testInfo.outputPath('stc-footer.png'),fullPage:false});
  await footer.getByRole('button',{name:'Questions fréquentes'}).click();await expect(page.getByRole('dialog',{name:'Une question ? On vous répond.'})).toBeVisible();await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toHaveCount(0);

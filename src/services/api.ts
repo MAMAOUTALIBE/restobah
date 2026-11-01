@@ -1,5 +1,7 @@
 import type {Address,CategoryInfo,Order,OrderPayload,Product,RestaurantSettings,User} from '../types';
 
+export const validDetailResponse=(value:unknown):value is {detail:string}=>!!value&&typeof value==='object'&&typeof (value as {detail?:unknown}).detail==='string'&&!!(value as {detail:string}).detail.trim();
+
 export class ApiError extends Error {
   constructor(message:string,public status:number,public errors?:unknown){super(message);this.name='ApiError';}
 }
@@ -54,6 +56,8 @@ export const restaurantApi={
   getCategories:()=>request<CategoryInfo[]>('/categories/'),
   getRestaurant:()=>request<RestaurantSettings>('/restaurant/'),
   me:()=>request<{user:User|null}>('/auth/me/'),
+  authCapabilities:()=>request<{passwordResetAvailable:boolean}>('/auth/capabilities/'),
+  updateProfile:(data:{name:string;phone:string})=>request<{user:User}>('/auth/me/',json('PATCH',data)),
   register:(data:{name:string;email:string;password:string})=>request<{user:User}>('/auth/register/',json('POST',data)),
   login:(data:{email:string;password:string})=>request<{user:User}>('/auth/login/',json('POST',data)),
   logout:()=>request<{detail:string}>('/auth/logout/',json('POST')),

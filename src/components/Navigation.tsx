@@ -95,7 +95,7 @@ export function Header({count,onNavigate,view,settings}:{count:number;onNavigate
         </nav>
         <div className="header-right">
           <button className="icon-button notification-button" aria-label="Voir le suivi des commandes" onClick={()=>navigate('Commandes')}><Bell size={23}/></button>
-          <span className={`open-status ${settings&&!settings.isOpen?'closed':''}`}><i/>{settings?settings.isOpen&&settings.orderingEnabled?'Commandes ouvertes':'Commandes fermées':'Connexion…'}</span>
+          <span className={`open-status ${settings&&(!settings.isOpen||!settings.orderingEnabled)?'closed':''}`}><i/>{settings?settings.isOpen&&settings.orderingEnabled?'Commandes ouvertes':'Commandes fermées':'Connexion…'}</span>
           <button className="icon-button favorite-header" aria-label="Mes favoris" onClick={()=>navigate('Favoris')}><Heart size={20}/></button>
           <button className="icon-button account-header" aria-label="Mon compte" onClick={()=>navigate('Compte')}><User size={20}/></button>
           <button className="cart-button" aria-label={`Mon panier, ${count} articles`} onClick={()=>navigate('Panier')}><ShoppingBag size={18}/><span>Mon panier</span>{count>0&&<b>{count}</b>}</button>

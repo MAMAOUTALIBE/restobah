@@ -17,6 +17,8 @@ urlpatterns = [
     path('carte/<int:pk>/modifier/', views.product_edit, name='product_edit'),
     path('carte/<int:pk>/disponibilite/', views.product_availability, name='product_availability'),
     path('restaurant/', views.restaurant, name='restaurant'),
+    path('restaurant/clients/', views.customers, name='customers'),
+    path('restaurant/clients/<int:pk>/', views.customer_detail, name='customer_detail'),
     path('restaurant/fermetures/ajouter/', views.closure_add, name='closure_add'),
     path('restaurant/fermetures/<int:pk>/supprimer/', views.closure_delete, name='closure_delete'),
 ]

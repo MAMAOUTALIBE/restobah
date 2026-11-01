@@ -1,0 +1,690 @@
+/* Computer layouts have their own scale; the accepted phone and tablet rules
+   remain responsible for every viewport through 1024px. */
+@media (min-width: 1025px) {
+  :root {
+    --desktop-shell: 1480px;
+    --desktop-gutter: clamp(40px, 3.35vw, 48px);
+  }
+
+  .site-header {
+    height: 80px;
+  }
+
+  .header-inner,
+  main {
+    width: 100%;
+    max-width: var(--desktop-shell);
+    padding-inline: var(--desktop-gutter);
+  }
+
+  .header-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .header-inner .brand {
+    min-width: 0;
+    max-width: 200px;
+    justify-self: start;
+  }
+
+  .header-inner .stc-logo {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 36px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .desktop-nav {
+    justify-self: center;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .desktop-nav button {
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+  }
+
+  .desktop-nav button.active {
+    background: #f0e4f6;
+  }
+
+  .desktop-nav .active::after {
+    display: none;
+  }
+
+  .header-right {
+    justify-self: end;
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .header-right > .icon-button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 13px;
+    background: #fff7ec;
+  }
+
+  .header-inner .cart-button {
+    min-height: 44px;
+    padding: 10px 14px;
+    gap: 9px;
+    font-size: 13px;
+  }
+
+  .header-inner .cart-button > span {
+    display: inline;
+  }
+
+  .topline {
+    padding-block: 14px 10px;
+    font-size: 12px;
+  }
+
+  .welcome-row {
+    gap: 32px;
+    margin: 8px 0 18px;
+  }
+
+  .welcome-row .small-label {
+    display: block;
+    line-height: 1.4;
+  }
+
+  .welcome-row h2 {
+    font-size: clamp(30px, 2.65vw, 38px);
+    margin-top: 6px;
+  }
+
+  .welcome-row .search-wrap {
+    width: 460px;
+    max-width: 48%;
+    min-height: 48px;
+    height: auto;
+    gap: 12px;
+    padding: 6px 7px 6px 17px;
+    border: 1px solid #eadfce;
+    border-radius: 15px;
+  }
+
+  .welcome-row .search-wrap input {
+    min-height: 34px;
+    padding-block: 5px;
+    font-size: 14px;
+  }
+
+  .welcome-row .search-wrap .filter-button {
+    min-height: 36px;
+    padding: 7px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+
+  .filters {
+    gap: 24px;
+    padding: 16px 20px;
+    font-size: 14px;
+  }
+
+  .filters select,
+  .filters > button {
+    min-height: 44px;
+    font-size: 13px;
+  }
+
+  .promo-banner {
+    height: clamp(300px, 23vw, 330px);
+    border-radius: 25px;
+  }
+
+  .promo-banner .promo-visual {
+    inset: 0 0 0 auto;
+    width: 66%;
+    height: 100%;
+    object-fit: cover;
+    object-position: right center;
+    mask-image: linear-gradient(90deg, transparent, #000 32%);
+  }
+
+  .promo-content {
+    width: 46%;
+    padding: 24px 0 42px 40px;
+  }
+
+  .promo-title {
+    font-size: clamp(52px, 4.45vw, 64px);
+    letter-spacing: -1.8px;
+  }
+
+  .promo-title--brand .promo-title-accent {
+    font-size: 1.15em;
+    letter-spacing: -2px;
+  }
+
+  .promo-order {
+    min-height: 46px;
+    margin-top: 22px;
+    padding-inline: 20px;
+    gap: 18px;
+    font-size: 14px;
+  }
+
+  .promo-pagination {
+    left: 28px;
+    bottom: 6px;
+  }
+
+  .categories.category-strip {
+    gap: 12px;
+    margin: 16px 0 20px;
+    padding: 10px 20px;
+    border-radius: 18px;
+  }
+
+  .category-strip .category {
+    gap: 7px;
+    font-size: 13px;
+  }
+
+  .category-strip .category .category-image {
+    width: 72px;
+    height: 72px;
+    padding: 5px;
+  }
+
+  .category-strip .category-image > .food-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .category-strip .category .category-label {
+    font-size: inherit;
+    overflow-wrap: anywhere;
+  }
+
+  .section-heading {
+    margin-bottom: 12px;
+  }
+
+  .section-heading h2 {
+    font-family: Outfit, sans-serif;
+    font-size: 30px;
+    letter-spacing: -.8px;
+  }
+
+  .section-heading .text-button {
+    font-size: 13px;
+  }
+
+  .catalog-section {
+    scroll-margin-top: 104px;
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+    gap: 20px;
+  }
+
+  .product-grid .product-card {
+    grid-template-columns: 44% minmax(0, 1fr);
+    min-height: 224px;
+    border-radius: 22px;
+  }
+
+  .product-card .card-media,
+  .specialty-card .card-media {
+    margin: 6px 0 6px 6px;
+    border-radius: 17px;
+  }
+
+  .product-card .card-body {
+    min-width: 0;
+    padding: 18px 16px 16px;
+  }
+
+  .product-card .card-badge {
+    margin-bottom: 7px;
+    padding: 4px 7px;
+    font-size: .625rem;
+    letter-spacing: .35px;
+  }
+
+  .product-card .card-title {
+    font-size: 1.25rem;
+    line-height: 1.15;
+    letter-spacing: -.4px;
+  }
+
+  .product-card .card-text {
+    margin-top: 7px;
+    font-size: .8125rem;
+    line-height: 1.45;
+  }
+
+  .product-card .card-options {
+    margin-top: 8px;
+    gap: 5px;
+  }
+
+  .product-card .card-options li {
+    padding: 3px 6px;
+    font-size: .6875rem;
+  }
+
+  .product-card .card-footer {
+    gap: 10px;
+    padding-top: 14px;
+  }
+
+  .product-card .card-price {
+    font-size: 1.5rem;
+  }
+
+  .product-card .card-choose {
+    min-height: 44px;
+    padding-inline: 13px;
+    gap: 6px;
+    font-size: .8125rem;
+  }
+
+  .product-card .card-add,
+  .product-card .card-favorite {
+    width: 44px;
+    height: 44px;
+  }
+
+  .product-card .card-favorite {
+    top: 13px;
+    left: 13px;
+  }
+
+  .product-grid .skeleton {
+    height: 224px;
+    border-radius: 22px;
+  }
+
+  .offer {
+    min-height: 180px;
+    height: auto;
+    padding: 26px 30px;
+    margin-top: 28px;
+    gap: 20px;
+  }
+
+  .offer h2 {
+    font-size: 28px;
+  }
+
+  .offer p {
+    font-size: 13px;
+  }
+
+  .offer .primary {
+    min-height: 46px;
+    font-size: 13px;
+  }
+
+  .values {
+    padding-block: 30px;
+  }
+
+  .values strong {
+    font-size: 13px;
+  }
+
+  .values small {
+    font-size: 12px;
+  }
+
+  .subpage {
+    padding-top: 28px;
+    padding-bottom: 60px;
+  }
+
+  .subpage h1 {
+    font-size: 44px;
+  }
+
+  .account-page:has(.auth-card) {
+    max-width: 700px;
+  }
+
+  .account-page .account-card {
+    border-radius: 20px;
+    padding: 30px;
+  }
+
+  .account-page .auth-card {
+    padding: 34px 38px;
+  }
+
+  .account-page:not(:has(.auth-card)) {
+    gap: 0 24px;
+  }
+
+  .account-page:not(:has(.auth-card)) > div[aria-busy],
+  .account-page:not(:has(.auth-card)) > .notice,
+  .account-page:not(:has(.auth-card)) > .success-message,
+  .account-page:not(:has(.auth-card)) > .panel-loading {
+    grid-column: 1 / -1;
+  }
+
+  .account-page:not(:has(.auth-card)) > div[aria-busy] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 24px;
+    min-width: 0;
+    margin-top: 24px;
+  }
+
+  .account-page > div[aria-busy] > .account-card {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+  }
+
+  .account-page > div[aria-busy] > .account-card:has(.account-heading),
+  .account-page > div[aria-busy] > .delete-card {
+    grid-column: 1 / -1;
+  }
+
+  .account-page > div[aria-busy] > .account-card:has(.account-heading) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 24px;
+  }
+
+  .account-page > div[aria-busy] .account-heading {
+    grid-column: 1 / -1;
+    min-width: 0;
+    margin-bottom: 8px;
+  }
+
+  .account-page > div[aria-busy] .account-link {
+    min-width: 0;
+    border-bottom: 0;
+    padding-block: 14px;
+  }
+
+  .account-page .checkout label,
+  .cart-content .checkout label {
+    font-size: 14px;
+  }
+
+  .account-page .checkout input,
+  .account-page .checkout textarea,
+  .cart-content .checkout input,
+  .cart-content .checkout select,
+  .cart-content .checkout textarea {
+    min-height: 48px;
+    padding: 13px 14px;
+    font-size: 15px;
+  }
+
+  .account-page .auth-tabs button {
+    font-size: 14px;
+  }
+
+  .account-page .auth-card > .muted,
+  .account-page .profile-card > .muted,
+  .account-heading .muted,
+  .account-page .account-guest,
+  .account-page .field-help {
+    font-size: 13px;
+  }
+
+  .account-page .account-link {
+    font-size: 15px;
+  }
+
+  .account-page .account-password-control button {
+    padding-inline: 15px;
+    font-size: 13px;
+  }
+
+  .account-page .primary,
+  .cart-content .primary {
+    min-height: 48px;
+    font-size: 14px;
+  }
+
+  .orders-page {
+    max-width: 1120px;
+  }
+
+  .orders-page .order-card {
+    padding: 28px 32px;
+    border-radius: 18px;
+  }
+
+  .orders-page .order-heading h3 {
+    font-size: 22px;
+  }
+
+  .orders-page .order-heading p,
+  .orders-page .order-line,
+  .orders-page .order-delivery,
+  .orders-page .order-status,
+  .orders-page .payment-note {
+    font-size: 13px;
+  }
+
+  .orders-page .order-line p,
+  .orders-page .tracking p,
+  .orders-page .order-events li {
+    font-size: 12px;
+  }
+
+  .modal-backdrop {
+    padding: 32px;
+  }
+
+  .modal {
+    width: min(680px, calc(100vw - 64px));
+    max-height: 88dvh;
+    border-radius: 22px;
+  }
+
+  .modal-close {
+    top: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .modal:has(> .detail-body) {
+    display: grid;
+    grid-template-columns: 44% minmax(0, 1fr);
+    width: min(960px, calc(100vw - 64px));
+    overflow: hidden;
+  }
+
+  .modal:has(> .detail-body) > .detail-image {
+    width: 100%;
+    height: 100%;
+    min-height: min(460px, 88dvh);
+    max-height: 88dvh;
+    align-self: stretch;
+    object-fit: contain;
+    background: #f6eadd;
+  }
+
+  .modal > .detail-body {
+    min-width: 0;
+    max-height: 88dvh;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 32px 30px 28px;
+  }
+
+  .detail-body h2,
+  .cart-content h2 {
+    padding-right: 26px;
+    font-size: 32px;
+  }
+
+  .detail-body > .muted,
+  .detail-body .option {
+    font-size: 14px;
+  }
+
+  .detail-body .option > span,
+  .detail-body .detail-note,
+  .cart-content .muted,
+  .cart-content .simulation {
+    font-size: 12px;
+  }
+
+  .detail-body .quantity button {
+    min-width: 40px;
+    min-height: 44px;
+  }
+
+  .detail-body .detail-actions {
+    gap: 10px;
+  }
+
+  .detail-body .detail-actions > .primary {
+    min-height: 46px;
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
+  .cart-content {
+    padding: 34px 36px;
+  }
+
+  .modal:has(.cart-content > .checkout) {
+    width: min(1000px, calc(100vw - 64px));
+  }
+
+  .cart-content:has(> .checkout) {
+    display: grid;
+    grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+    column-gap: 28px;
+    align-items: start;
+  }
+
+  .cart-content:has(> .checkout) > :not(.cart-summary):not(.checkout) {
+    grid-column: 1 / -1;
+  }
+
+  .cart-content:has(> .checkout) > .cart-summary {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .cart-content:has(> .checkout) > .checkout {
+    grid-column: 2;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .cart-item h3 {
+    font-size: 17px;
+  }
+
+  .cart-item p,
+  .cart-item strong,
+  .totals p {
+    font-size: 14px;
+  }
+
+  .cart-content .totals .total {
+    font-size: 22px;
+  }
+
+  .footer-info-modal {
+    padding: 38px;
+  }
+
+  .footer-info-modal h3 {
+    font-size: 18px;
+  }
+
+  .footer-info-modal p {
+    font-size: 14px;
+  }
+
+  footer.site-footer,
+  main.home-view ~ footer.site-footer {
+    margin-top: 24px;
+    padding-inline: var(--desktop-gutter);
+  }
+
+  .site-footer .footer-shell {
+    max-width: calc(var(--desktop-shell) - 2 * var(--desktop-gutter));
+  }
+
+  .site-footer .footer-columns {
+    gap: 28px;
+    padding-block: 25px;
+  }
+
+  .site-footer .footer-wordmark {
+    font-size: 38px;
+  }
+
+  .site-footer .footer-identity > p,
+  .site-footer .footer-location address,
+  .site-footer .footer-hours > p,
+  .site-footer .footer-links :is(button, a) {
+    font-size: 13px;
+  }
+
+  .site-footer .footer-links :is(button, a) {
+    min-height: 40px;
+  }
+
+  .site-footer .footer-hours > strong {
+    font-size: 17px;
+  }
+
+  .site-footer .footer-bottom,
+  .site-footer .footer-bottom > button:not(.footer-top) {
+    font-size: 12px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .desktop-nav {
+    gap: 12px;
+  }
+
+  .desktop-nav button {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .header-inner .open-status {
+    display: flex;
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: #f0f3e8;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .header-inner .open-status.closed {
+    background: #fae9df;
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

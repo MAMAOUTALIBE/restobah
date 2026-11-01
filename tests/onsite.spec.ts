@@ -253,7 +253,7 @@ test.describe('commandes réelles sur la base jetable', () => {
       await client.getByLabel('Nom complet', {exact: true}).fill('Client Livraison');
       await client.getByLabel('Adresse e-mail', {exact: true}).fill(email);
       await client.getByLabel('Mot de passe', {exact: true}).fill('Recette-Physique!74xq');
-      await client.getByLabel('Confirmer le mot de passe', {exact: true}).fill('Recette-Physique!74xq');
+
       const registration = client.waitForResponse(response => response.url().endsWith('/api/auth/register/'));
       await client.getByRole('button', {name: 'Créer mon compte', exact: true}).click();
       const user = (await (await registration).json()).user as {id: number};

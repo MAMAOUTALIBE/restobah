@@ -33,8 +33,9 @@ Ces deux commandes s’exécutent dans deux terminaux à la racine du projet. `n
 - Panier local avec validation et actualisation des choix disponibles.
 - Retrait ou livraison, frais, délais affichés et zone postale configurables (zone obligatoire pour livrer).
 - Commande invitée ou avec compte, total calculé en base avec des décimaux et clé anti-doublon ; refus du serveur affichés tels quels.
-- E-mail de confirmation au client (lien de suivi personnel) et alerte de l’équipe (`STC_ORDER_NOTIFICATION_EMAIL`).
-- Comptes clients, connexion/déconnexion, réinitialisation du mot de passe, adresses et favoris synchronisés, suppression du compte en libre-service.
+- E-mail de confirmation au client (lien de suivi personnel) et alerte de l’équipe (`STC_ORDER_NOTIFICATION_EMAIL`), après configuration et recette de l’envoi.
+- Inscription en trois champs, connexion depuis le panier avec reprise de la saisie, profil nom/téléphone, adresses et favoris synchronisés, suppression du compte en libre-service.
+- Récupération du mot de passe avec lien à usage unique ; indisponibilité indiquée quand l’envoi n’est pas configuré. [Préparation des e-mails et contrôle sans envoi](docs/ACCOUNT_EMAILS.md).
 - Historique protégé et suivi des statuts réels ; les commandes invitées de l’appareil restent visibles après connexion.
 - Administration Django : produits/photos/options, horaires, fermetures, promotions, commandes et statuts.
 - Stripe Checkout en **mode test uniquement** : signatures vérifiées, webhooks idempotents, sessions de 31 à 41 min, annulation administrative qui ferme la session, paiement tardif signalé « à rembourser », `cancel_stale_orders` pour les commandes impayées.
@@ -48,6 +49,7 @@ Le nouvel espace `/crm/` reprend la maquette crème, violet et orange avec quatr
 - Plats : création et modification, photo JPEG/PNG/WebP contrôlée, prix avec virgule, disponibilités, allergènes et options existantes.
 - Commandes : filtres, détails, historique et passage en préparation, prête puis terminée ; les protections de paiement restent actives.
 - Restaurant : coordonnées, pause des commandes, retrait/livraison, frais, zones, horaires avec plusieurs services et fermeture après minuit, fermetures exceptionnelles.
+- Clients dans **Mon restaurant** : recherche et fiche en lecture seule, commandes liées au compte, montants réels réglés sur place séparés des tests ; droits de consultation explicites.
 - Synchronisation : le site déjà ouvert actualise la carte et les réglages en arrière-plan ; les commandes et l’accueil du CRM s’actualisent automatiquement.
 
 Une ancienne base PostgreSQL initialisée avec les identifiants de démonstration peut nécessiter le réalignement des séquences. La commande dédiée `repair_crm_sequences` préserve les données et ne recrée aucun plat : voir [la procédure de maintenance](docs/OPERATIONS.md).

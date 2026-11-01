@@ -9,7 +9,7 @@ postal_validator = RegexValidator(r'^\d{5}$', 'Le code postal doit contenir cinq
 class StrictSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         if not isinstance(data, dict):
-            raise serializers.ValidationError('Un objet JSON est attendu.')
+            raise serializers.ValidationError({'non_field_errors': ['Un objet JSON est attendu.']})
         unknown = set(data) - set(self.fields)
         if unknown:
             raise serializers.ValidationError({key: 'Ce champ n’est pas accepté.' for key in unknown})
@@ -81,6 +81,15 @@ class RegisterSerializer(StrictSerializer):
         value = value.strip().lower()
         if get_user_model().objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError('Cette adresse est déjà utilisée.')
+        return value
+
+class ProfileSerializer(StrictSerializer):
+    name = serializers.CharField(max_length=100, min_length=2)
+    phone = serializers.CharField(max_length=24, allow_blank=True, validators=[phone_validator])
+
+    def validate_phone(self, value):
+        if value and not 10 <= sum(character.isdigit() for character in value) <= 15:
+            raise serializers.ValidationError('Le téléphone doit contenir entre 10 et 15 chiffres.')
         return value
 
 class LoginSerializer(StrictSerializer):

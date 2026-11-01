@@ -11,7 +11,7 @@ L’instance en ligne est une **démonstration** : les changements sont enregist
 | **Accueil** | Voir les commandes à préparer, en cuisine ou prêtes, puis ouvrir celles qui demandent votre attention. |
 | **Commandes** | Chercher une commande, consulter son contenu et faire avancer sa préparation. |
 | **Ma carte** | Ajouter ou modifier un plat, son prix, sa photo et sa disponibilité. |
-| **Mon restaurant** | Changer les coordonnées, les horaires et les réglages des commandes en ligne. |
+| **Mon restaurant** | Changer les coordonnées, les horaires et les réglages des commandes en ligne ; consulter les clients selon vos droits. |
 
 ## Ajouter ou modifier un plat
 
@@ -59,6 +59,24 @@ Dans **Mon restaurant** :
 - Pour un congé ou une date particulière, utilisez **Fermetures exceptionnelles**, puis **Ajouter la fermeture**. Cette action possède son propre bouton d’enregistrement.
 
 En démonstration, les horaires sont conservés, mais la prise de commandes reste accessible tant qu’elle n’est pas mise en pause manuellement.
+
+## Retrouver un client
+
+Dans **Mon restaurant → Clients**, recherchez son nom, son e-mail ou son téléphone, puis ouvrez sa fiche. Pour un téléphone, les espaces et les séparateurs usuels ne gênent pas la recherche. Vous y trouvez ses coordonnées et les commandes passées avec son compte. Un lien vers sa fiche apparaît aussi dans les détails de ses commandes.
+
+Le **Montant réglé sur place** comprend uniquement les commandes réelles encaissées, non annulées et non remboursées. Les montants de démonstration sont présentés séparément. Les coordonnées d’une commande ne remplacent pas automatiquement celles du compte ; la provenance d’un téléphone repris d’une commande est indiquée.
+
+Les commandes sans compte restent dans **Commandes**. Elles ne sont pas rattachées à une fiche par simple correspondance d’e-mail ou de téléphone. Les comptes du personnel ne figurent pas dans la liste des clients.
+
+La consultation demande les deux droits **Consulter les clients** (`shop.view_customer`) et **consultation des commandes** (`shop.view_order`), avec un compte de personnel actif. Votre responsable les attribue explicitement ; les comptes existants ne reçoivent pas ces droits automatiquement. La fiche client est en lecture seule.
+
+## Aider un client à créer son compte
+
+Sur le site, **Compte → Créer un compte** demande son nom, son e-mail et un mot de passe d’au moins dix caractères. Dans le panier, **Me connecter** ou **Créer un compte** permet de retrouver sa commande après la connexion. **Continuer ma commande sans compte** reste possible.
+
+Le client peut enregistrer son nom et son téléphone dans **Mes informations** pour gagner du temps lors de ses prochaines commandes. Son e-mail de connexion reste en lecture seule.
+
+Sans service d’envoi d’e-mails configuré, la récupération du mot de passe affiche son indisponibilité. Ne promettez pas l’envoi d’un lien tant que la configuration et la réception réelle n’ont pas été vérifiées.
 
 ## Si un enregistrement ne passe pas
 

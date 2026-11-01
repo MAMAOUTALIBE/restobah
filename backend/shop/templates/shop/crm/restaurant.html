@@ -1,5 +1,6 @@
 {% extends 'shop/crm/base.html' %}{% block title %}Mon restaurant{% endblock %}{% block content %}
 <div class="crm-page-heading"><div><h1>Mon restaurant</h1><p>Vos coordonnées, vos horaires et vos commandes.</p></div></div>
+{% include 'shop/crm/partials/restaurant_navigation.html' %}
 {% if form.errors or opening_formset.errors or opening_formset.non_form_errors %}<div class="crm-alert crm-alert-error" role="alert"><strong>Les changements n’ont pas été enregistrés.</strong> Vérifiez les champs indiqués.{{ form.non_field_errors }}{% for field in form.hidden_fields %}{{ field.errors }}{% endfor %}{{ opening_formset.non_form_errors }}</div>{% endif %}
 {% if not permissions.change_restaurant %}<p class="crm-alert">Vous consultez les réglages en lecture seule.</p>{% endif %}
 <form method="post" class="crm-form crm-restaurant-form" data-submit-lock>{% csrf_token %}{% for field in form.hidden_fields %}{{ field }}{% endfor %}

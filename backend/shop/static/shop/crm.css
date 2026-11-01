@@ -14,3 +14,44 @@
 @media(prefers-reduced-motion:reduce){.crm-app *{scroll-behavior:auto!important;transition:none!important}}
 
 .crm-pagination{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:22px}.crm-pagination>span{font-size:13px;color:var(--crm-muted)}
+
+/* Read-only customer records stay inside the restaurant's four-section navigation. */
+.crm-restaurant-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 24px;padding-bottom:16px;border-bottom:1px solid var(--crm-line)}
+.crm-restaurant-tabs>a{display:inline-flex;align-items:center;gap:9px;min-height:44px;padding:10px 16px;border-radius:12px;color:var(--crm-violet);font-weight:600}
+.crm-restaurant-tabs>a:hover{background:#f3e7d6}.crm-restaurant-tabs>a[aria-current=page]{background:var(--crm-violet);color:var(--crm-surface)}
+.crm-inline-link{color:var(--crm-violet)!important;text-decoration:underline!important;text-underline-offset:3px}
+.crm-customer-count{margin-bottom:14px!important;color:var(--crm-muted);font-size:14px}
+.crm-customer-list,.crm-customer-history{display:grid;gap:14px}
+.crm-customer-card{display:grid;grid-template-columns:minmax(200px,1.4fr) minmax(260px,1.7fr) auto;align-items:center;gap:20px;padding:22px}
+.crm-customer-identity{display:flex;align-items:center;gap:14px;min-width:0}
+.crm-customer-identity>div{min-width:0}.crm-customer-identity h2{font-size:21px;overflow-wrap:anywhere}
+.crm-customer-identity h2>a:hover{text-decoration:underline;text-underline-offset:3px}
+.crm-customer-identity p{font-size:14px;color:var(--crm-muted);overflow-wrap:anywhere}
+.crm-customer-avatar{display:grid;place-items:center;flex:0 0 48px;width:48px;height:48px;border-radius:16px;background:#f4e6d5;color:var(--crm-violet)}
+.crm-customer-inactive{display:inline-block;margin-top:6px;color:#78552d;font-size:12px;background:#f3e7d6;padding:3px 8px;border-radius:8px}
+.crm-customer-figures{display:grid;grid-template-columns:.7fr 1.1fr 1fr;gap:16px;margin:0;min-width:0}
+.crm-customer-figures>div,.crm-customer-contact>div{min-width:0}
+.crm-customer-figures dt,.crm-customer-contact dt,.crm-customer-summary dt{font-size:13px;color:var(--crm-muted)}
+.crm-customer-figures dd{margin:4px 0 0;font-size:16px;font-weight:600;overflow-wrap:anywhere}
+.crm-customer-figures .crm-customer-simulation{font-size:12px;font-weight:400;color:var(--crm-muted)}
+.crm-customer-profile{padding:26px;margin-bottom:18px}
+.crm-customer-contact{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:22px 0 0}
+.crm-customer-contact dd{margin:5px 0 0;overflow-wrap:anywhere}.crm-customer-contact .crm-muted{font-size:13px}
+.crm-customer-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 30px}
+.crm-customer-summary>div{padding:20px}.crm-customer-summary dd{font-size:25px;font-weight:700;margin:8px 0 0;overflow-wrap:anywhere}
+.crm-customer-summary dd.crm-customer-summary-note{font-size:12px;font-weight:400;color:var(--crm-muted);line-height:1.5}
+.crm-customer-summary .crm-customer-demo{background:#f5edf8;border:1px solid #ddc4e7}
+.crm-customer-order{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(150px,auto);align-items:center;gap:18px;padding:20px}
+.crm-customer-order h3{font-size:16px;overflow-wrap:anywhere}.crm-customer-order p{font-size:13px;color:var(--crm-muted)}
+.crm-customer-order-amount{text-align:right}.crm-customer-order-amount>strong{font-size:21px}
+@media(max-width:1180px){.crm-customer-card{grid-template-columns:minmax(0,1fr) auto}.crm-customer-figures{grid-column:1/-1;grid-row:2}.crm-customer-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){
+  .crm-restaurant-tabs{margin-bottom:20px}.crm-restaurant-tabs>a{flex:1;justify-content:center;padding:10px 12px}
+  .crm-customer-card{grid-template-columns:minmax(0,1fr);padding:18px;gap:18px}.crm-customer-card>.crm-button{width:100%}
+  .crm-customer-avatar{flex-basis:40px;width:40px;height:40px;border-radius:13px}.crm-customer-identity{gap:11px}.crm-customer-identity h2{font-size:19px}
+  .crm-customer-figures{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.crm-customer-figures>div:last-child{grid-column:1/-1}
+  .crm-customer-profile{padding:18px}.crm-customer-contact{grid-template-columns:minmax(0,1fr);gap:16px}
+  .crm-customer-summary{gap:10px}.crm-customer-summary>div{padding:15px 12px}.crm-customer-summary dd{font-size:21px}.crm-customer-summary dt{font-size:12px}
+  .crm-customer-order{grid-template-columns:minmax(0,1fr) auto;padding:16px;gap:12px}.crm-customer-order>.crm-order-status{font-size:11px;max-width:90px}
+  .crm-customer-order-amount{grid-column:1/-1;text-align:left}.crm-customer-order-amount>strong{font-size:19px}
+}

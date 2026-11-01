@@ -1,0 +1,4 @@
+<nav class="crm-restaurant-tabs" aria-label="Rubriques de Mon restaurant">
+  {% if permissions.view_restaurant %}<a href="{% url 'crm:restaurant' %}" {% if restaurant_tab == 'settings' %}aria-current="page"{% endif %}>{% include 'shop/crm/icon.html' with name='store' %}Réglages</a>{% endif %}
+  {% if permissions.view_customers %}<a href="{% url 'crm:customers' %}" {% if restaurant_tab == 'customers' %}aria-current="page"{% endif %}>{% include 'shop/crm/icon.html' with name='user' %}Clients</a>{% endif %}
+</nav>
